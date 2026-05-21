@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Veritabanı
+  postgres:
+    image: postgres:15-alpine
+    container_name: sorubankasi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sorubankasi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sorubankasi123}
+      POSTGRES_DB: ${POSTGRES_DB:-sorubankasi}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - sorubankasi_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sorubankasi}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: sorubankasi_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - sorubankasi_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (S3 uyumlu Object Storage - PDF ve medya dosyaları için)
+  minio:
+    image: minio/minio:latest
+    container_name: sorubankasi_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sorubankasi}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-sorubankasi123}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    networks:
+      - sorubankasi_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  sorubankasi_network:
+    driver: bridge

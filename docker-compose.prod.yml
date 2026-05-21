@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # --- INFRASTRUCTURE SERVICES ---
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: sorubankasi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sorubankasi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-sorubankasi}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sorubankasi}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sorubankasi_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispass123}
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  minio:
+    image: minio/minio:latest
+    container_name: sorubankasi_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sorubankasi}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    networks:
+      - app_network
+
+  # --- APPLICATION SERVICES ---
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sorubankasi_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sorubankasi}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sorubankasi}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispass123}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      # MinIO Config
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-sorubankasi}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-sorubankasi}
+      # App Config
+      PORT: 3333
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "127.0.0.1:3333:3333"
+    volumes:
+      - backend_uploads:/usr/src/app/uploads
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: sorubankasi_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  backend_uploads:
+
+networks:
+  app_network:
+    driver: bridge

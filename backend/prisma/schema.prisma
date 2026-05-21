@@ -1,0 +1,514 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Group {
+  id          String        @id @default(cuid())
+  name        String
+  code        String        @unique
+  description String?
+  color       String?
+  icon        String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean       @default(true)
+  type        GroupType     @default(OFFLINE)
+  parentId    String?
+  parent      Group?        @relation("SubGroups", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Group[]       @relation("SubGroups")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  tenantId    String?
+  tenant      Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  exams       Exam[]        @relation("GroupExams")
+  lessons     Lesson[]      @relation("GroupLessons")
+  pdfs        PDFDocument[] @relation("GroupPDFs")
+  questions   Question[]    @relation("GroupQuestions")
+  students    User[]        @relation("GroupStudents")
+  examAreas   ExamArea[]    @relation("ExamAreaGroups")
+
+  @@index([tenantId])
+  @@index([code])
+  @@index([parentId])
+  @@index([type])
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  classes   Class[]
+  exams     Exam[]
+  groups    Group[]
+  lessons   Lesson[]
+  users          User[]
+  questionReports QuestionReport[]
+  examAreas      ExamArea[]
+  questions      Question[]
+  pdfDocuments   PDFDocument[]
+}
+
+model User {
+  id               String                 @id @default(cuid())
+  email            String                 @unique
+  password         String
+  firstName        String
+  lastName         String
+  tcNo             String?
+  phone            String?
+  avatar           String?
+  role             Role
+  isActive         Boolean                @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  tenantId         String?
+  classId          String?
+  annotations      PDFAnnotation[]
+  createdQuestions Question[]             @relation("QuestionCreator")
+  createdPDFs      PDFDocument[]          @relation("PDFCreator")
+  testResults      SelfTestResult[]
+  examResults      StudentExamResult[]
+  class            Class?                 @relation(fields: [classId], references: [id])
+  tenant           Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  groups           Group[]                @relation("GroupStudents")
+  examAreas        ExamArea[]             @relation("UserExamAreas")
+  questionProgress UserQuestionProgress[]
+  questionReports  QuestionReport[]
+  AuditLog         AuditLog[]
+
+  @@index([tenantId])
+  @@index([classId])
+  @@index([email])
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  grade     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  students  User[]
+  exams     Exam[]   @relation("ClassExams")
+
+  @@index([tenantId])
+}
+
+model Lesson {
+  id        String     @id @default(cuid())
+  name      String
+  code      String
+  order     Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenantId  String?
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  units     Unit[]
+  groups    Group[]    @relation("GroupLessons")
+  examAreas ExamArea[] @relation("ExamAreaLessons")
+
+  @@unique([code, tenantId])
+  @@index([tenantId])
+}
+
+// Soru Bankası - HAKİMLİK, KPSS A, KPSS B vb.
+model ExamArea {
+  id          String   @id @default(cuid())
+  name        String // HAKİMLİK, KPSS A GRUBU vb.
+  slug        String   @unique // hakimlik, kpss-a-grubu
+  description String?
+  coverImage  String? // Kapak görseli URL
+  icon        String? // Opsiyonel ikon (lucide icon adı)
+  color       String? // Tema rengi (hex)
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  isNew       Boolean  @default(false) // "Yeni" badge gösterimi
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Many-to-many ilişkiler
+  lessons   Lesson[]   @relation("ExamAreaLessons")
+  exams     Exam[]     @relation("ExamAreaExams")
+  students  User[]     @relation("UserExamAreas")
+  questions Question[] @relation("ExamAreaQuestions")
+  groups    Group[]    @relation("ExamAreaGroups")
+
+  tenantId  String?
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([order])
+  @@index([tenantId])
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lessonId  String
+  topics    Topic[]
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+}
+
+model Topic {
+  id               String            @id @default(cuid())
+  name             String
+  order            Int               @default(0)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  unitId           String
+  learningOutcomes LearningOutcome[]
+  unit             Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  topicAnalyses    TopicAnalysis[]
+  questions        Question[]        @relation("QuestionToTopic")
+
+  @@index([unitId])
+}
+
+model LearningOutcome {
+  id        String     @id @default(cuid())
+  name      String
+  code      String?
+  order     Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  topicId   String
+  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@index([topicId])
+}
+
+model Question {
+  id                String                 @id @default(cuid())
+  content           Json
+  options           Json
+  correctAnswer     String
+  explanation       Json?
+  searchText        String? // Denormalize arama metni (content + options + explanation)
+  type              QuestionType           @default(MULTIPLE_CHOICE)
+  difficulty        DifficultyLevel        @default(MEDIUM)
+  videoSolution     String?
+  isPastQuestion    Boolean                @default(false)
+  pastExamName      String?
+  pastExamYear      Int?
+  isActive          Boolean                @default(true)
+  deletedAt         DateTime? // Soft delete: null = aktif, tarih = silinmiş
+  usageCount        Int                    @default(0)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  learningOutcomeId String?
+  createdById       String
+  examQuestions     ExamQuestion[]
+  createdBy         User                   @relation("QuestionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  learningOutcome   LearningOutcome?       @relation(fields: [learningOutcomeId], references: [id])
+  groups            Group[]                @relation("GroupQuestions")
+  topics            Topic[]                @relation("QuestionToTopic")
+  examAreas         ExamArea[]             @relation("ExamAreaQuestions")
+  userProgress      UserQuestionProgress[]
+  reports           QuestionReport[]
+
+  tenantId          String?
+  tenant            Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([learningOutcomeId])
+  @@index([createdById])
+  @@index([createdById, isActive])
+  @@index([difficulty])
+  @@index([difficulty, isActive])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model Exam {
+  id               String              @id @default(cuid())
+  title            String
+  description      String?
+  type             ExamType
+  status           ExamStatus          @default(DRAFT)
+  startTime        DateTime?
+  endTime          DateTime?
+  duration         Int
+  totalQuestions   Int                 @default(0)
+  shuffleQuestions Boolean             @default(false)
+  shuffleOptions   Boolean             @default(false)
+  showResults      Boolean             @default(true)
+  allowReview      Boolean             @default(true)
+  singleAttempt    Boolean             @default(true)
+  correctPoints    Float               @default(1)
+  wrongPenalty     Float               @default(0.25)
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  tenantId         String?
+  pdfDocumentId    String?
+  pdfDocument      PDFDocument?        @relation(fields: [pdfDocumentId], references: [id])
+  tenant           Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  questions        ExamQuestion[]
+  results          StudentExamResult[]
+  classes          Class[]             @relation("ClassExams")
+  groups           Group[]             @relation("GroupExams")
+  examAreas        ExamArea[]          @relation("ExamAreaExams")
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([startTime])
+}
+
+model ExamQuestion {
+  id          String   @id @default(cuid())
+  orderNumber Int
+  points      Float    @default(1)
+  createdAt   DateTime @default(now())
+  examId      String
+  questionId  String
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, questionId])
+  @@unique([examId, orderNumber])
+  @@index([examId])
+  @@index([questionId])
+}
+
+model PDFDocument {
+  id          String          @id @default(cuid())
+  title       String
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  pageCount   Int             @default(0)
+  answerKey   Json?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdById String?
+  createdBy   User?           @relation("PDFCreator", fields: [createdById], references: [id])
+  exams       Exam[]
+  annotations PDFAnnotation[]
+  groups      Group[]         @relation("GroupPDFs")
+
+  tenantId    String?
+  tenant      Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([createdById])
+  @@index([tenantId])
+}
+
+model PDFAnnotation {
+  id            String      @id @default(cuid())
+  pageNumber    Int
+  data          Json
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userId        String
+  pdfDocumentId String
+  pdfDocument   PDFDocument @relation(fields: [pdfDocumentId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pdfDocumentId, pageNumber])
+  @@index([userId])
+  @@index([pdfDocumentId])
+}
+
+model StudentExamResult {
+  id                String          @id @default(cuid())
+  correctCount      Int             @default(0)
+  wrongCount        Int             @default(0)
+  emptyCount        Int             @default(0)
+  netScore          Float           @default(0)
+  rawScore          Float           @default(0)
+  scaledScore       Float?
+  answers           Json
+  startedAt         DateTime
+  finishedAt        DateTime?
+  duration          Int?
+  rank              Int?
+  totalParticipants Int?
+  percentile        Float?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  userId            String
+  examId            String
+  exam              Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicAnalysis     TopicAnalysis[]
+
+  @@unique([userId, examId])
+  @@index([userId])
+  @@index([examId])
+  @@index([netScore])
+}
+
+model TopicAnalysis {
+  id           String            @id @default(cuid())
+  correctCount Int               @default(0)
+  wrongCount   Int               @default(0)
+  emptyCount   Int               @default(0)
+  successRate  Float             @default(0)
+  resultId     String
+  topicId      String
+  result       StudentExamResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  topic        Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([resultId, topicId])
+  @@index([resultId])
+  @@index([topicId])
+}
+
+model SelfTestResult {
+  id           String   @id @default(cuid())
+  correctCount Int      @default(0)
+  wrongCount   Int      @default(0)
+  emptyCount   Int      @default(0)
+  topics       Json
+  answers      Json
+  createdAt    DateTime @default(now())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+enum GroupType {
+  OFFLINE
+  ONLINE
+  CAMP
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+}
+
+enum DifficultyLevel {
+  VERY_EASY
+  EASY
+  MEDIUM
+  HARD
+  VERY_HARD
+}
+
+enum ExamType {
+  TURKEY_WIDE
+  INSTITUTIONAL
+  SELF_TEST
+}
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model UserQuestionProgress {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  optionId   String
+  isCorrect  Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+}
+
+model QuestionReport {
+  id          String       @id @default(cuid())
+  questionId  String
+  userId      String       // The student who reported it
+  tenantId    String?
+  content     String       // Explanation / the report reason
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  question    Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+// ═══════════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════════
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String // Örn: 'DELETE_QUESTION', 'CREATE_EXAM', 'LOGIN'
+  resource   String // Örn: 'Question', 'Exam', 'User'
+  resourceId String?
+  details    Json? // Ek detaylar
+  ipAddress  String?
+  tenantId   String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource, resourceId])
+  @@index([tenantId])
+  @@index([createdAt])
+}

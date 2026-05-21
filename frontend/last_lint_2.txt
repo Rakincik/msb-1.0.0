@@ -1,0 +1,303 @@
+﻿node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/
+node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], Remot 
+   eException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+./src/app/content/page.tsx
+35:8  Warning: React Hook useCallback has an unnecessary depende
+ncy: 'API_URL'. Either exclude it or remove the dependency array
+. Outer scope values like 'API_URL' aren't valid dependencies be
+cause mutating them doesn't re-render the component.  react-hook
+s/exhaustive-deps
+
+./src/app/dashboard/page.tsx
+14:5  Error: 'Clock' is defined but never used.  @typescript-esl
+int/no-unused-vars
+
+./src/app/exam-areas/page.tsx
+134:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+146:8  Warning: React Hook useEffect has missing dependencies: '
+fetchLessons' and 'fetchQuestionBanks'. Either include them or r
+emove the dependency array.  react-hooks/exhaustive-deps
+203:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+239:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+259:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+302:41  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+422:63  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#3
+4;`, `&rdquo;`.  react/no-unescaped-entities
+422:68  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#3
+4;`, `&rdquo;`.  react/no-unescaped-entities
+473:41  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+
+./src/app/exams/page.tsx
+61:8  Warning: React Hook useEffect has a missing dependency: 'f
+etchExams'. Either include it or remove the dependency array. Ou
+ter scope values like 'API_URL' aren't valid dependencies becaus
+e mutating them doesn't re-render the component.  react-hooks/ex
+haustive-deps
+63:11  Error: 'getStatusBadge' is assigned a value but never use
+d.  @typescript-eslint/no-unused-vars
+63:54  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+
+./src/app/exams/[id]/take/page.tsx
+7:10  Error: 'DashboardLayout' is defined but never used.  @type
+script-eslint/no-unused-vars
+11:10  Error: 'Card' is defined but never used.  @typescript-esl
+int/no-unused-vars
+12:10  Error: 'Separator' is defined but never used.  @typescrip
+t-eslint/no-unused-vars
+29:38  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+68:8  Warning: React Hook useCallback has an unnecessary depende
+ncy: 'API_URL'. Either exclude it or remove the dependency array
+. Outer scope values like 'API_URL' aren't valid dependencies be
+cause mutating them doesn't re-render the component.  react-hook
+s/exhaustive-deps
+
+./src/app/groups/page.tsx
+48:51  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+49:31  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+60:30  Error: 'e' is defined but never used.  @typescript-eslint
+/no-unused-vars
+78:8  Warning: React Hook useEffect has a missing dependency: 'f
+etchGroups'. Either include it or remove the dependency array.  
+react-hooks/exhaustive-deps
+80:39  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+
+./src/app/groups/[id]/page.tsx
+33:39  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+111:8  Warning: React Hook useEffect has a missing dependency: '
+fetchGroup'. Either include it or remove the dependency array.  
+react-hooks/exhaustive-deps
+115:8  Warning: React Hook useEffect has a missing dependency: '
+fetchAvailableStudents'. Either include it or remove the depende
+ncy array.  react-hooks/exhaustive-deps
+134:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+161:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+185:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+312:75  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#3
+9;`, `&rsquo;`.  react/no-unescaped-entities
+327:54  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#3
+9;`, `&rsquo;`.  react/no-unescaped-entities
+498:84  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+516:70  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#3
+9;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/pdfs/page.tsx
+46:8  Warning: React Hook useCallback has an unnecessary depende
+ncy: 'API_URL'. Either exclude it or remove the dependency array
+. Outer scope values like 'API_URL' aren't valid dependencies be
+cause mutating them doesn't re-render the component.  react-hook
+s/exhaustive-deps
+
+./src/app/question-banks/[id]/page.tsx
+7:10  Error: 'ManualQuestionModal' is defined but never used.  @
+typescript-eslint/no-unused-vars
+75:14  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+76:14  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+132:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+161:8  Warning: React Hook useEffect has missing dependencies: '
+fetchBankDetail' and 'fetchQuestions'. Either include them or re
+move the dependency array.  react-hooks/exhaustive-deps
+197:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+211:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+230:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+516:34  Error: 'method' is defined but never used.  @typescript-
+eslint/no-unused-vars
+558:77  Error: 'bankColor' is defined but never used.  @typescri
+pt-eslint/no-unused-vars
+575:21  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+662:25  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+
+./src/app/questions/import/page.tsx
+95:12  Error: 'stats' is assigned a value but never used.  @type
+script-eslint/no-unused-vars
+98:56  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+131:8  Warning: React Hook useEffect has an unnecessary dependen
+cy: 'API_URL'. Either exclude it or remove the dependency array.
+ Outer scope values like 'API_URL' aren't valid dependencies bec
+ause mutating them doesn't re-render the component.  react-hooks
+/exhaustive-deps
+324:25  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+428:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+453:72  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+623:86  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+661:61  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+661:61  Warning: img elements must have an alt prop, either with
+ meaningful text, or an empty string for decorative images.  jsx
+-a11y/alt-text
+716:53  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+765:65  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+
+./src/app/questions/new/page.tsx
+83:8  Warning: React Hook useEffect has an unnecessary dependenc
+y: 'API_URL'. Either exclude it or remove the dependency array. 
+Outer scope values like 'API_URL' aren't valid dependencies beca
+use mutating them doesn't re-render the component.  react-hooks/
+exhaustive-deps
+106:8  Warning: React Hook useEffect has an unnecessary dependen
+cy: 'API_URL'. Either exclude it or remove the dependency array.
+ Outer scope values like 'API_URL' aren't valid dependencies bec
+ause mutating them doesn't re-render the component.  react-hooks
+/exhaustive-deps
+
+./src/app/questions/page.tsx
+11:28  Error: 'BookOpen' is defined but never used.  @typescript
+-eslint/no-unused-vars
+12:24  Error: 'ChevronDown' is defined but never used.  @typescr
+ipt-eslint/no-unused-vars
+13:5  Error: 'Calendar' is defined but never used.  @typescript-
+eslint/no-unused-vars
+15:5  Error: 'Eye' is defined but never used.  @typescript-eslin
+t/no-unused-vars
+17:10  Error: 'BookNavigator' is defined but never used.  @types
+cript-eslint/no-unused-vars
+49:14  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+50:14  Error: Unexpected any. Specify a different type.  @typesc
+ript-eslint/no-explicit-any
+90:12  Error: 'lessons' is assigned a value but never used.  @ty
+pescript-eslint/no-unused-vars
+138:44  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+178:8  Warning: React Hook useEffect has missing dependencies: '
+fetchExamAreas', 'fetchQuestions', and 'fetchTree'. Either inclu
+de them or remove the dependency array.  react-hooks/exhaustive-
+deps
+276:11  Error: 'handleSelect' is assigned a value but never used
+.  @typescript-eslint/no-unused-vars
+299:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+314:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+363:83  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+959:21  Warning: Using `<img>` could result in slower LCP and hi
+gher bandwidth. Consider using `<Image />` from `next/image` to 
+automatically optimize images. This may incur additional usage o
+r cost from your provider. See: https://nextjs.org/docs/messages
+/no-img-element  @next/next/no-img-element
+1059:25  Warning: Using `<img>` could result in slower LCP and h
+igher bandwidth. Consider using `<Image />` from `next/image` to
+ automatically optimize images. This may incur additional usage 
+or cost from your provider. See: https://nextjs.org/docs/message
+s/no-img-element  @next/next/no-img-element
+1124:25  Warning: Using `<img>` could result in slower LCP and h
+igher bandwidth. Consider using `<Image />` from `next/image` to
+ automatically optimize images. This may incur additional usage 
+or cost from your provider. See: https://nextjs.org/docs/message
+s/no-img-element  @next/next/no-img-element
+
+./src/app/student/exam-areas/page.tsx
+11:10  Error: 'cn' is defined but never used.  @typescript-eslin
+t/no-unused-vars
+29:26  Error: 'user' is assigned a value but never used.  @types
+cript-eslint/no-unused-vars
+56:8  Warning: React Hook useEffect has an unnecessary dependenc
+y: 'API_URL'. Either exclude it or remove the dependency array. 
+Outer scope values like 'API_URL' aren't valid dependencies beca
+use mutating them doesn't re-render the component.  react-hooks/
+exhaustive-deps
+
+./src/app/student/exam-areas/[slug]/page.tsx
+13:10  Error: 'cn' is defined but never used.  @typescript-eslin
+t/no-unused-vars
+83:8  Warning: React Hook useEffect has an unnecessary dependenc
+y: 'API_URL'. Either exclude it or remove the dependency array. 
+Outer scope values like 'API_URL' aren't valid dependencies beca
+use mutating them doesn't re-render the component.  react-hooks/
+exhaustive-deps
+
+./src/app/users/page.tsx
+16:5  Error: 'MoreHorizontal' is defined but never used.  @types
+cript-eslint/no-unused-vars
+16:39  Error: 'Filter' is defined but never used.  @typescript-e
+slint/no-unused-vars
+120:8  Warning: React Hook useCallback has an unnecessary depend
+ency: 'API_URL'. Either exclude it or remove the dependency arra
+y. Outer scope values like 'API_URL' aren't valid dependencies b
+ecause mutating them doesn't re-render the component.  react-hoo
+ks/exhaustive-deps
+159:25  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+183:25  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+203:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+223:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+259:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+293:34  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#3
+9;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/users/[id]/page.tsx
+104:8  Warning: React Hook useEffect has a missing dependency: '
+fetchUser'. Either include it or remove the dependency array.  r
+eact-hooks/exhaustive-deps
+109:25  Error: Unexpected any. Specify a different type.  @types
+cript-eslint/no-explicit-any
+133:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+156:18  Error: 'error' is defined but never used.  @typescript-e
+slint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: http
+s://nextjs.org/docs/basic-features/eslint#disabling-rules

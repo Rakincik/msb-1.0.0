@@ -1,0 +1,3 @@
+Err: Not Found
+Path: C:\Users\Rüstem\.gemini\antigravity\scratch\sorubankasi\backend\uploads\images\1779369809910-p5su6.png
+Exists: true
