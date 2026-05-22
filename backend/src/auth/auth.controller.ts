@@ -30,12 +30,6 @@ export class AuthController {
         return this.authService.register(dto);
     }
 
-    @Post('emergency-reset')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: '🚨 Acil admin şifre sıfırlama (Kullanımdan sonra kaldırın!)' })
-    async emergencyReset(@Body() body: { email: string; password: string; secretKey: string }) {
-        return this.authService.emergencyResetAdmin(body.email, body.password, body.secretKey);
-    }
 
     @Post('login')
     @Throttle({ default: { limit: 5, ttl: 60000 } })
