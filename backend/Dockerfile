@@ -4,8 +4,9 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 
 WORKDIR /usr/src/app
 
-# Install dependencies
+# Install dependencies (prisma schema needed for postinstall hook)
 COPY package*.json ./
+COPY prisma ./prisma/
 RUN npm install
 
 # Cache-bust: force Docker to re-copy source every build
