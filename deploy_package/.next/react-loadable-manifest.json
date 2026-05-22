@@ -2,11 +2,19 @@
   "app\\questions\\page.tsx -> @/components/questions/pdf-cropper-modal": {
     "id": 66045,
     "files": [
+      "static/css/ef33c93d4dfdb2d2.css",
       "static/chunks/7a49ec60-d0f539be7009df24.js",
       "static/chunks/3379-ae6fc8e15af20c86.js",
       "static/chunks/2953-1b142930f72b609b.js",
-      "static/chunks/4248-6322bf1b2f55ebb3.js",
-      "static/chunks/2435-2494beb617c32c8e.js"
+      "static/chunks/7755-35da685b4f309cb0.js",
+      "static/chunks/2435-d910aa536719f57a.js"
+    ]
+  },
+  "components\\student\\practice-modal.tsx -> ./practice/drawing-canvas": {
+    "id": 99765,
+    "files": [
+      "static/chunks/1174-9d928963e5aa6882.js",
+      "static/chunks/9765.ccab33b8187da9ef.js"
     ]
   }
 }
