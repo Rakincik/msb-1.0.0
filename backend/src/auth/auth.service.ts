@@ -84,31 +84,95 @@ export class AuthService {
     }
 
     async validateUser(email: string, password: string) {
+        this.logger.log(`🔍 Login denemesi: ${email}`);
+
         const user = await this.prisma.user.findUnique({
             where: { email },
         });
 
         if (!user) {
+            this.logger.warn(`❌ Kullanıcı bulunamadı: ${email}`);
+            // Debug: Tüm kullanıcı emaillerini listele
+            const allUsers = await this.prisma.user.findMany({
+                select: { email: true, role: true, isActive: true },
+            });
+            this.logger.log(`📋 Veritabanındaki kullanıcılar: ${JSON.stringify(allUsers)}`);
             throw new UnauthorizedException('Email veya şifre hatalı');
         }
 
+        this.logger.log(`✅ Kullanıcı bulundu: ${user.email}, Rol: ${user.role}, Aktif: ${user.isActive}`);
+        
         if (!user.isActive) {
+            this.logger.warn(`⛔ Hesap devre dışı: ${user.email}`);
             throw new UnauthorizedException('Hesabınız devre dışı bırakılmış');
         }
 
+        // Şifre tipini logla (hash mi düz metin mi?)
+        const isHashed = user.password.startsWith('$2b$') || user.password.startsWith('$2a$');
+        this.logger.log(`🔑 Şifre tipi: ${isHashed ? 'BCRYPT HASH' : 'DÜZ METİN'} (uzunluk: ${user.password.length})`);
+
         // Şifreler düz metin olarak tutulmaya başlandığı için önce doğrudan eşitlik kontrolü
         let isPasswordValid = password === user.password;
+        this.logger.log(`🔐 Düz metin karşılaştırma: ${isPasswordValid ? 'BAŞARILI ✅' : 'BAŞARISIZ ❌'}`);
 
         // Eğer düz metin eşleşmediyse (eski hashli şifre olabilir), bcrypt ile kontrol et
         if (!isPasswordValid) {
-            isPasswordValid = await bcrypt.compare(password, user.password);
+            try {
+                isPasswordValid = await bcrypt.compare(password, user.password);
+                this.logger.log(`🔐 Bcrypt karşılaştırma: ${isPasswordValid ? 'BAŞARILI ✅' : 'BAŞARISIZ ❌'}`);
+            } catch (bcryptError) {
+                this.logger.error(`💥 Bcrypt hatası: ${bcryptError.message}`);
+                isPasswordValid = false;
+            }
         }
 
         if (!isPasswordValid) {
+            this.logger.warn(`❌ Şifre hatalı: ${email}`);
             throw new UnauthorizedException('Email veya şifre hatalı');
         }
 
+        this.logger.log(`🎉 Login başarılı: ${user.email}`);
         return user;
+    }
+
+    /**
+     * Acil durum admin şifre sıfırlama.
+     * Güvenlik: Sadece SECRET_KEY ile çağrılabilir.
+     * Kullanımdan sonra bu metodu kaldırın!
+     */
+    async emergencyResetAdmin(email: string, newPassword: string, secretKey: string) {
+        // JWT_SECRET ile doğrula
+        const expectedSecret = this.configService.get('JWT_SECRET');
+        if (secretKey !== expectedSecret) {
+            throw new UnauthorizedException('Geçersiz secret key');
+        }
+
+        // Kullanıcıyı bul veya oluştur
+        let user = await this.prisma.user.findUnique({ where: { email } });
+
+        if (user) {
+            // Şifreyi düz metin olarak güncelle
+            user = await this.prisma.user.update({
+                where: { email },
+                data: { password: newPassword, isActive: true },
+            });
+            this.logger.warn(`🔧 Şifre sıfırlandı: ${email}`);
+        } else {
+            // Kullanıcı yoksa oluştur
+            user = await this.prisma.user.create({
+                data: {
+                    email,
+                    password: newPassword,
+                    firstName: 'Admin',
+                    lastName: 'User',
+                    role: Role.SUPER_ADMIN,
+                    isActive: true,
+                },
+            });
+            this.logger.warn(`🔧 Yeni admin oluşturuldu: ${email}`);
+        }
+
+        return { message: `Şifre başarıyla sıfırlandı: ${email}`, userId: user.id, role: user.role };
     }
 
     async refreshTokens(refreshToken: string): Promise<TokenResponse> {
