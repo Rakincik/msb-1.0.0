@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import {
     Search, Plus, Download, Loader2, Users, UserCheck, UserX,
     Edit, Trash, Eye, X, RefreshCw, ChevronLeft, ChevronRight,
@@ -662,8 +663,9 @@ function BulkUploadSheet({
 //  USERS PAGE
 // ═══════════════════════════════════════
 export default function UsersPage() {
-    const { user: currentUser, accessToken } = useAuth();
+    const { currentUser, accessToken } = useAuth() as any;
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const [users, setUsers] = useState<User[]>([]);
     const [meta, setMeta] = useState({ total: 0, skip: 0, take: 25, hasMore: false });
@@ -728,7 +730,13 @@ export default function UsersPage() {
     };
 
     const handleDelete = async (userId: string) => {
-        if (!confirm('Kullanıcı silinecek. Emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Kullanıcı Silme',
+            description: 'Kullanıcı silinecek. Emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             const res = await fetch(`${API_URL}/users/${userId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
             if (!res.ok) throw new Error('Silinemedi');
@@ -1045,29 +1053,35 @@ export default function UsersPage() {
                                                                 <Eye className="h-4 w-4" />
                                                             </Link>
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditSheet(user)}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={() => handleToggleStatus(user.id, user.isActive)}
-                                                        >
-                                                            {user.isActive ? (
-                                                                <UserX className="h-4 w-4 text-orange-500" />
-                                                            ) : (
-                                                                <UserCheck className="h-4 w-4 text-green-500" />
-                                                            )}
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive hover:text-destructive"
-                                                            onClick={() => handleDelete(user.id)}
-                                                        >
-                                                            <Trash className="h-4 w-4" />
-                                                        </Button>
+                                                        {!(user.role === 'SUPER_ADMIN' && currentUser?.role !== 'SUPER_ADMIN') && (
+                                                            <>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditSheet(user)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                    onClick={() => handleToggleStatus(user.id, user.isActive)}
+                                                                >
+                                                                    {user.isActive ? (
+                                                                        <UserX className="h-4 w-4 text-orange-500" />
+                                                                    ) : (
+                                                                        <UserCheck className="h-4 w-4 text-green-500" />
+                                                                    )}
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                        {user.role !== 'SUPER_ADMIN' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                                                onClick={() => handleDelete(user.id)}
+                                                            >
+                                                                <Trash className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

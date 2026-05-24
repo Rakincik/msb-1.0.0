@@ -8,9 +8,7 @@ import {
     Delete,
     Query,
     UseGuards,
-    UseInterceptors,
 } from '@nestjs/common';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 import { ExamAreaService } from './exam-area.service';
 import { CreateExamAreaDto, UpdateExamAreaDto } from './dto/exam-area.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -38,7 +36,6 @@ export class ExamAreaController {
     }
 
     @Get()
-    @UseInterceptors(CacheInterceptor)
     @ApiOperation({ summary: 'Tüm sınav alanlarını listele' })
     findAll(@Query('includeInactive') includeInactive?: string, @TenantScope() tenantId?: string | null) {
         return this.examAreaService.findAll(includeInactive === 'true', tenantId);
@@ -51,14 +48,12 @@ export class ExamAreaController {
     }
 
     @Get(':id')
-    @UseInterceptors(CacheInterceptor)
     @ApiOperation({ summary: 'Sınav alanı detayı' })
     findOne(@Param('id') id: string) {
         return this.examAreaService.findOne(id);
     }
 
     @Get('slug/:slug')
-    @UseInterceptors(CacheInterceptor)
     @ApiOperation({ summary: 'Slug ile sınav alanı bul' })
     findBySlug(@Param('slug') slug: string) {
         return this.examAreaService.findBySlug(slug);

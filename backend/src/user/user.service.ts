@@ -177,19 +177,39 @@ export class UserService {
         const { tenantId, role, classId, isActive, skip = 0, take = 50, search, sortBy, sortOrder = 'desc' } = params;
 
         const where: any = {};
+        const andConditions: any[] = [];
 
-        if (tenantId) where.tenantId = tenantId;
-        if (role) where.role = role;
-        if (classId) where.classId = classId;
-        if (typeof isActive === 'boolean') where.isActive = isActive;
+        if (tenantId) {
+            andConditions.push({
+                OR: [
+                    { tenantId: tenantId },
+                    { role: Role.SUPER_ADMIN }
+                ]
+            });
+        }
+        if (role) {
+            andConditions.push({ role });
+        }
+        if (classId) {
+            andConditions.push({ classId });
+        }
+        if (typeof isActive === 'boolean') {
+            andConditions.push({ isActive });
+        }
 
         if (search) {
-            where.OR = [
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
-                { phone: { contains: search, mode: 'insensitive' } },
-            ];
+            andConditions.push({
+                OR: [
+                    { firstName: { contains: search, mode: 'insensitive' } },
+                    { lastName: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } },
+                    { phone: { contains: search, mode: 'insensitive' } },
+                ]
+            });
+        }
+
+        if (andConditions.length > 0) {
+            where.AND = andConditions;
         }
 
         // Dynamic sorting
@@ -366,6 +386,11 @@ export class UserService {
     }
 
     async remove(id: string, currentUser: any) {
+        const targetUser = await this.prisma.user.findUnique({ where: { id } });
+        if (targetUser && targetUser.role === Role.SUPER_ADMIN) {
+            throw new ForbiddenException('Süper Admin hesapları silinemez!');
+        }
+
         await this.checkPermissionsAndGetTargetUser(id, currentUser);
 
         await this.prisma.user.delete({ where: { id } });
