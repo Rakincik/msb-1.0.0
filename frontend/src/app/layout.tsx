@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
+import { ConfirmProvider } from "@/context/confirm-context";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
@@ -31,8 +32,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
-          <Toaster />
+          <ConfirmProvider>
+            {children}
+            <Toaster />
+          </ConfirmProvider>
         </AuthProvider>
       </body>
     </html>
