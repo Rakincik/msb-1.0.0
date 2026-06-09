@@ -20,6 +20,7 @@ import {
     UpdateTopicDto,
     CreateLearningOutcomeDto,
     UpdateLearningOutcomeDto,
+    BulkImportItemDto,
 } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -179,5 +180,15 @@ export class ContentController {
     @ApiOperation({ summary: 'İçerik ağacı (Ders > Ünite > Konu)' })
     getContentTree(@CurrentUser('tenantId') tenantId?: string) {
         return this.contentService.getContentTree(tenantId);
+    }
+
+    @Post('lessons/:lessonId/bulk-import')
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.TEACHER)
+    @ApiOperation({ summary: 'Seçili derse Excel/CSV ile ünite ve konu yükle' })
+    bulkImportToLesson(
+        @Param('lessonId') lessonId: string,
+        @Body() items: BulkImportItemDto[]
+    ) {
+        return this.contentService.bulkImportToLesson(lessonId, items);
     }
 }

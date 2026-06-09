@@ -8,6 +8,7 @@ import { useAuth } from '@/context/auth-context';
 import { PdfUploadDialog } from '@/components/pdf/pdf-upload-dialog';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import Link from 'next/link';
 import { API_URL } from '@/lib/api-config';
 
@@ -21,13 +22,12 @@ interface PdfDocument {
 }
 
 export default function PdfsPage() {
-    const { user , accessToken } = useAuth();
+    const { user, accessToken } = useAuth();
     const { toast } = useToast();
+    const confirm = useConfirm();
     const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-
-
 
     const fetchPdfs = useCallback(async () => {
         try {
@@ -44,7 +44,13 @@ export default function PdfsPage() {
     }, [accessToken]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Silmek istediğinize emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Doküman Silme',
+            description: 'Silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             const res = await fetch(`${API_URL}/pdf/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
             if (res.ok) {

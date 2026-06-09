@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import { cn, getFileUrl } from '@/lib/utils';
 import { normalizeImageUrl } from '@/lib/image-utils';
 import Link from 'next/link';
@@ -90,6 +91,7 @@ export default function ExamAreaDetailPage() {
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const [bank, setBank] = useState<QuestionBankDetail | null>(null);
     const [questions, setQuestions] = useState<Question[]>([]);
@@ -157,7 +159,13 @@ export default function ExamAreaDetailPage() {
     };
 
     const handleDelete = async () => {
-        if (!confirm('Bu soru bankasını silmek istediğinize emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Soru Bankası Silme',
+            description: 'Bu soru bankasını silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             await apiClient.delete(`/exam-areas/${bankId}`);
             toast({ title: 'Başarılı', description: 'Soru bankası silindi.' });
@@ -168,7 +176,13 @@ export default function ExamAreaDetailPage() {
     };
 
     const handleDeleteQuestion = async (id: string) => {
-        if (!confirm('Soru silinecek. Emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Soru Silme',
+            description: 'Soru silinecek. Emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             await apiClient.delete(`/questions/${id}`);
             toast({ title: 'Başarılı', description: 'Soru silindi.' });
@@ -180,7 +194,13 @@ export default function ExamAreaDetailPage() {
 
     const handleBulkDelete = async () => {
         if (selectedIds.size === 0) return;
-        if (!confirm(`${selectedIds.size} soru silinecek. Emin misiniz?`)) return;
+        const confirmed = await confirm({
+            title: 'Çoklu Soru Silme',
+            description: `${selectedIds.size} soru silinecek. Emin misiniz?`,
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             for (const id of Array.from(selectedIds)) {
                 await apiClient.delete(`/questions/${id}`);

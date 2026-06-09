@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api-client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function LessonsPage() {
     const { toast } = useToast();
@@ -22,6 +23,8 @@ export default function LessonsPage() {
     const [units, setUnits] = useState<any[]>([]);
     const [topics, setTopics] = useState<any[]>([]);
     const [learningOutcomes, setLearningOutcomes] = useState<any[]>([]);
+    const [examAreas, setExamAreas] = useState<any[]>([]);
+    const [selectedExamAreaIds, setSelectedExamAreaIds] = useState<string[]>([]);
 
     // Selection
     const [selectedLesson, setSelectedLesson] = useState<any>(null);
@@ -40,6 +43,7 @@ export default function LessonsPage() {
 
     // Modals
     const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+    const [isEditLessonOpen, setIsEditLessonOpen] = useState(false);
     const [isCreateUnitOpen, setIsCreateUnitOpen] = useState(false);
     const [isCreateTopicOpen, setIsCreateTopicOpen] = useState(false);
     const [isCreateOutcomeOpen, setIsCreateOutcomeOpen] = useState(false);
@@ -73,6 +77,7 @@ export default function LessonsPage() {
 
     useEffect(() => {
         fetchLessons();
+        fetchExamAreas();
     }, []);
 
     useEffect(() => {
@@ -150,14 +155,29 @@ export default function LessonsPage() {
         }
     };
 
+    const fetchExamAreas = async () => {
+        try {
+            const data = await apiClient.get('/exam-areas?includeInactive=true');
+            setExamAreas(Array.isArray(data) ? data : data.data || []);
+        } catch (error) {
+            console.error('Error fetching exam areas:', error);
+        }
+    };
+
     // CREATE FUNCTIONS
     const handleCreateLesson = async () => {
         if (!newLessonName || !newLessonCode) return;
         try {
-            await apiClient.post(`/content/lessons`, { name: newLessonName, code: newLessonCode, order: lessons.length + 1 });
+            await apiClient.post(`/content/lessons`, { 
+                name: newLessonName, 
+                code: newLessonCode, 
+                order: lessons.length + 1,
+                examAreaIds: selectedExamAreaIds
+            });
             toast({ title: 'Başarılı', description: 'Ders oluşturuldu.' });
             setNewLessonName('');
             setNewLessonCode('');
+            setSelectedExamAreaIds([]);
             setIsCreateLessonOpen(false);
             fetchLessons();
         } catch (e: any) { 
@@ -211,11 +231,24 @@ export default function LessonsPage() {
     // UPDATE FUNCTIONS
     const handleUpdateLesson = async (id: string) => {
         try {
-            await apiClient.patch(`/content/lessons/${id}`, { name: editLessonName, code: editLessonCode });
+            await apiClient.patch(`/content/lessons/${id}`, { 
+                name: editLessonName, 
+                code: editLessonCode,
+                examAreaIds: selectedExamAreaIds
+            });
             toast({ title: 'Başarılı', description: 'Ders güncellendi.' });
             setEditingLessonId(null);
+            setIsEditLessonOpen(false);
+            setSelectedExamAreaIds([]);
             fetchLessons();
-            if (selectedLesson?.id === id) setSelectedLesson({ ...selectedLesson, name: editLessonName, code: editLessonCode });
+            if (selectedLesson?.id === id) {
+                setSelectedLesson({ 
+                    ...selectedLesson, 
+                    name: editLessonName, 
+                    code: editLessonCode,
+                    examAreas: examAreas.filter(area => selectedExamAreaIds.includes(area.id))
+                });
+            }
         } catch (error: any) {
             toast({ title: 'Hata', description: error.message || 'Güncellenemedi.', variant: 'destructive' });
         }
@@ -374,37 +407,40 @@ export default function LessonsPage() {
                                     {filteredLessons.map(lesson => (
                                         <div
                                             key={lesson.id}
-                                            onClick={() => { if(editingLessonId !== lesson.id) { setSelectedLesson(lesson); } }}
-                                            className={`group p-2 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${
+                                            onClick={() => { setSelectedLesson(lesson); }}
+                                            className={`group p-2.5 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${
                                                 selectedLesson?.id === lesson.id 
                                                 ? 'border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-500' 
                                                 : 'hover:border-blue-300 hover:bg-slate-50'
                                             }`}
                                         >
-                                            {editingLessonId === lesson.id ? (
-                                                <div className="flex-1 flex gap-1 items-center" onClick={e => e.stopPropagation()}>
-                                                    <Input className="h-6 text-[10px] font-mono w-12 px-1" value={editLessonCode} onChange={e => setEditLessonCode(e.target.value)} placeholder="KOD" />
-                                                    <Input className="h-6 text-xs flex-1 px-1.5" value={editLessonName} onChange={e => setEditLessonName(e.target.value)} />
-                                                    <Button size="icon" className="h-6 w-6 bg-blue-600 hover:bg-blue-700 shrink-0" onClick={() => handleUpdateLesson(lesson.id)}><Save className="h-3 w-3" /></Button>
-                                                    <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0 text-slate-500" onClick={() => setEditingLessonId(null)}><X className="h-3 w-3" /></Button>
+                                            <div className="overflow-hidden w-[75%]">
+                                                <div className="font-semibold text-xs text-slate-800 truncate" title={lesson.name}>{lesson.name}</div>
+                                                <div className="flex flex-wrap gap-1 items-center mt-1">
+                                                    <span className="text-[9px] text-slate-600 font-mono bg-slate-100 px-1 py-0.5 rounded border leading-none">{lesson.code}</span>
+                                                    {lesson.examAreas && lesson.examAreas.map((ea: any) => (
+                                                        <span key={ea.id} className="text-[8px] px-1 py-0.5 rounded text-white leading-none font-medium truncate max-w-[70px]" style={{ backgroundColor: ea.color || '#3b82f6' }} title={ea.name}>
+                                                            {ea.name}
+                                                        </span>
+                                                    ))}
                                                 </div>
-                                            ) : (
-                                                <>
-                                                    <div className="overflow-hidden">
-                                                        <div className="font-medium text-xs text-slate-800 truncate">{lesson.name}</div>
-                                                        <div className="text-[9px] text-muted-foreground font-mono bg-white px-1 py-0.5 rounded border inline-block mt-0.5">{lesson.code}</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-0.5">
-                                                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-6 w-6 text-blue-500 hover:bg-blue-100" onClick={(e) => { e.stopPropagation(); setEditLessonName(lesson.name); setEditLessonCode(lesson.code); setEditingLessonId(lesson.id); }}>
-                                                            <Edit2 className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-6 w-6 text-red-500 hover:bg-red-100" onClick={(e) => { e.stopPropagation(); setLessonToDelete(lesson); }}>
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                        <ChevronRight className={`h-3 w-3 ml-0.5 ${selectedLesson?.id === lesson.id ? 'text-blue-500' : 'text-slate-300'}`} />
-                                                    </div>
-                                                </>
-                                            )}
+                                            </div>
+                                            <div className="flex items-center gap-0.5">
+                                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-6 w-6 text-blue-500 hover:bg-blue-100" onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    setEditingLessonId(lesson.id); 
+                                                    setEditLessonName(lesson.name); 
+                                                    setEditLessonCode(lesson.code); 
+                                                    setSelectedExamAreaIds(lesson.examAreas?.map((ea: any) => ea.id) || []);
+                                                    setIsEditLessonOpen(true); 
+                                                }}>
+                                                    <Edit2 className="h-3 w-3" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 h-6 w-6 text-red-500 hover:bg-red-100" onClick={(e) => { e.stopPropagation(); setLessonToDelete(lesson); }}>
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                                <ChevronRight className={`h-3 w-3 ml-0.5 ${selectedLesson?.id === lesson.id ? 'text-blue-500' : 'text-slate-300'}`} />
+                                            </div>
                                         </div>
                                     ))}
                                     {filteredLessons.length === 0 && <div className="text-center py-6 text-slate-400 text-xs">Sonuç bulunamadı.</div>}
@@ -631,24 +667,94 @@ export default function LessonsPage() {
             </div>
 
             {/* CREATE MODALS */}
-            <Dialog open={isCreateLessonOpen} onOpenChange={setIsCreateLessonOpen}>
-                <DialogContent className="sm:max-w-[425px]">
+            <Dialog open={isCreateLessonOpen} onOpenChange={(open) => { setIsCreateLessonOpen(open); if(!open) { setNewLessonName(''); setNewLessonCode(''); setSelectedExamAreaIds([]); } }}>
+                <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-blue-700"><BookOpen className="h-5 w-5" /> Yeni Ders Oluştur</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2 text-blue-700 font-bold"><BookOpen className="h-5 w-5" /> Yeni Ders Oluştur</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label>Ders Kodu</Label>
-                            <Input placeholder="Örn: MAT" value={newLessonCode} onChange={e => setNewLessonCode(e.target.value.toUpperCase())} className="uppercase font-mono" />
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="col-span-1">
+                                <Label className="text-xs font-semibold text-slate-600">Ders Kodu *</Label>
+                                <Input placeholder="Örn: MAT" value={newLessonCode} onChange={e => setNewLessonCode(e.target.value.toUpperCase())} className="uppercase font-mono text-xs mt-1" />
+                            </div>
+                            <div className="col-span-2">
+                                <Label className="text-xs font-semibold text-slate-600">Ders Adı *</Label>
+                                <Input placeholder="Örn: Matematik" value={newLessonName} onChange={e => setNewLessonName(e.target.value)} className="text-xs mt-1" />
+                            </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label>Ders Adı</Label>
-                            <Input placeholder="Örn: Matematik" value={newLessonName} onChange={e => setNewLessonName(e.target.value)} />
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-slate-600">Bağlanacak Alt Kategoriler / Soru Bankaları</Label>
+                            <p className="text-[10px] text-muted-foreground">Bu dersin hangi kategorilerde listeleneceğini seçin. Birden fazla seçebilirsiniz.</p>
+                            <div className="border rounded-lg p-2.5 max-h-40 overflow-y-auto space-y-1.5 bg-slate-50">
+                                {examAreas.length === 0 ? (
+                                    <div className="text-center py-4 text-muted-foreground text-xs">Kategori bulunamadı.</div>
+                                ) : (
+                                    examAreas.map(area => (
+                                        <label key={area.id} className="flex items-center space-x-2 p-1.5 rounded hover:bg-white cursor-pointer transition-colors border shadow-sm bg-white">
+                                            <Checkbox checked={selectedExamAreaIds.includes(area.id)} onCheckedChange={(checked) => {
+                                                const updated = checked ? [...selectedExamAreaIds, area.id] : selectedExamAreaIds.filter(id => id !== area.id);
+                                                setSelectedExamAreaIds(updated);
+                                            }} />
+                                            <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: area.color || '#3b82f6' }} />
+                                                <span className="text-xs font-medium text-slate-700 truncate">{area.name}</span>
+                                            </div>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCreateLessonOpen(false)}>İptal</Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateLesson} disabled={!newLessonName || !newLessonCode}>Oluştur</Button>
+                        <Button variant="outline" size="sm" onClick={() => setIsCreateLessonOpen(false)}>İptal</Button>
+                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateLesson} disabled={!newLessonName || !newLessonCode}>Oluştur</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditLessonOpen} onOpenChange={(open) => { setIsEditLessonOpen(open); if(!open) { setEditingLessonId(null); setSelectedExamAreaIds([]); } }}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-indigo-700 font-bold"><Edit2 className="h-5 w-5" /> Dersi Düzenle</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="col-span-1">
+                                <Label className="text-xs font-semibold text-slate-600">Ders Kodu *</Label>
+                                <Input placeholder="Örn: MAT" value={editLessonCode} onChange={e => setEditLessonCode(e.target.value.toUpperCase())} className="uppercase font-mono text-xs mt-1" />
+                            </div>
+                            <div className="col-span-2">
+                                <Label className="text-xs font-semibold text-slate-600">Ders Adı *</Label>
+                                <Input placeholder="Örn: Matematik" value={editLessonName} onChange={e => setEditLessonName(e.target.value)} className="text-xs mt-1" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-slate-600">Bağlı Alt Kategoriler / Soru Bankaları</Label>
+                            <p className="text-[10px] text-muted-foreground">Bu dersin hangi kategorilerde listeleneceğini seçin. Birden fazla seçebilirsiniz.</p>
+                            <div className="border rounded-lg p-2.5 max-h-40 overflow-y-auto space-y-1.5 bg-slate-50">
+                                {examAreas.length === 0 ? (
+                                    <div className="text-center py-4 text-muted-foreground text-xs">Kategori bulunamadı.</div>
+                                ) : (
+                                    examAreas.map(area => (
+                                        <label key={area.id} className="flex items-center space-x-2 p-1.5 rounded hover:bg-white cursor-pointer transition-colors border shadow-sm bg-white">
+                                            <Checkbox checked={selectedExamAreaIds.includes(area.id)} onCheckedChange={(checked) => {
+                                                const updated = checked ? [...selectedExamAreaIds, area.id] : selectedExamAreaIds.filter(id => id !== area.id);
+                                                setSelectedExamAreaIds(updated);
+                                            }} />
+                                            <div className="flex items-center gap-1.5 flex-1 overflow-hidden">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: area.color || '#3b82f6' }} />
+                                                <span className="text-xs font-medium text-slate-700 truncate">{area.name}</span>
+                                            </div>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" size="sm" onClick={() => setIsEditLessonOpen(false)}>İptal</Button>
+                        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" onClick={() => editingLessonId && handleUpdateLesson(editingLessonId)}>Kaydet</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

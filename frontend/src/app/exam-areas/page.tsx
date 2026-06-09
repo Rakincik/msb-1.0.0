@@ -15,6 +15,7 @@ import { Plus, Trash2, Edit, Save, Loader2, Sparkles, Upload, X, MapPin } from '
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { cn, getFileUrl } from '@/lib/utils';
+import { useConfirm } from '@/context/confirm-context';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 
@@ -57,6 +58,7 @@ const PRESET_COLORS = [
 
 export default function QuestionBanksPage() {
     const { toast } = useToast();
+    const confirm = useConfirm();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [questionBanks, setQuestionBanks] = useState<QuestionBank[]>([]);
@@ -196,7 +198,13 @@ export default function QuestionBanksPage() {
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm('Bu soru bankasını silmek istediğinize emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Soru Bankası Silme',
+            description: 'Bu soru bankasını silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             await apiClient.delete(`/exam-areas/${id}`);
             toast({ title: 'Başarılı', description: 'Soru bankası silindi.' });

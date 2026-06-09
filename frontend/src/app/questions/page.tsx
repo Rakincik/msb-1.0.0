@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -95,6 +96,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function QuestionsPage() {
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     // UI State
     const [isMethodSelectOpen, setIsMethodSelectOpen] = useState(false);
@@ -344,7 +346,13 @@ export default function QuestionsPage() {
                 return;
             }
         } else {
-            if (!confirm(`${selectedIds.size} soru silinecek. Emin misiniz?\n(Silinen sorular geri alınabilir)`)) return;
+            const confirmed = await confirm({
+                title: 'Çoklu Soru Silme',
+                description: `${selectedIds.size} soru silinecek. Emin misiniz?\n(Silinen sorular geri alınabilir)`,
+                confirmText: 'Sil',
+                isDangerous: true,
+            });
+            if (!confirmed) return;
         }
 
         try {
@@ -361,7 +369,13 @@ export default function QuestionsPage() {
 
     // Single Delete — soft delete (geri alınabilir)
     const handleDelete = async (id: string) => {
-        if (!confirm('Soru silinecek. Emin misiniz?\n(Silinen sorular geri alınabilir)')) return;
+        const confirmed = await confirm({
+            title: 'Soru Silme',
+            description: 'Soru silinecek. Emin misiniz?\n(Silinen sorular geri alınabilir)',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             await apiClient.delete(`/questions/${id}`);
             toast({ title: 'Başarılı', description: 'Soru silindi. (Geri alınabilir)' });
@@ -467,57 +481,7 @@ export default function QuestionsPage() {
         printWindow.document.close();
     };
 
-    // Keyboard Shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Don't trigger in inputs
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
-            switch (e.key) {
-                case 'n':
-                case 'N':
-                    if (!e.ctrlKey && !e.metaKey) {
-                        e.preventDefault();
-                        setIsMethodSelectOpen(true);
-                    }
-                    break;
-                case '1':
-                    e.preventDefault();
-                    setViewMode('grid');
-                    break;
-                case '2':
-                    e.preventDefault();
-                    setViewMode('list');
-                    break;
-                case '3':
-                    e.preventDefault();
-                    setViewMode('table');
-                    break;
-                case 'Escape':
-                    if (detailQuestion) {
-                        setDetailQuestion(null);
-                    } else if (selectedIds.size > 0) {
-                        setSelectedIds(new Set());
-                    }
-                    break;
-                case 'f':
-                case 'F':
-                    if (e.ctrlKey || e.metaKey) {
-                        e.preventDefault();
-                        searchRef.current?.focus();
-                    }
-                    break;
-                case 'Delete':
-                    if (selectedIds.size > 0) {
-                        handleBulkDelete();
-                    }
-                    break;
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [detailQuestion, selectedIds]);
 
     return (
         <DashboardLayout>
@@ -532,10 +496,7 @@ export default function QuestionsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-lg px-2 py-1">
-                        <Keyboard className="h-3 w-3" />
-                        <span>N: Yeni • 1/2/3: Görünüm • Ctrl+F: Ara</span>
-                    </div>
+
                     <Button className="shadow-lg hover:shadow-xl transition-all" onClick={() => setIsMethodSelectOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Yeni Soru Ekle

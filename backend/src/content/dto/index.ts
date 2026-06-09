@@ -22,6 +22,11 @@ export class CreateLessonDto {
     @IsString()
     tenantId?: string;
 
+    @ApiPropertyOptional({ type: [String], example: ['exam-area-id-1'] })
+    @IsOptional()
+    @IsString({ each: true })
+    examAreaIds?: string[];
+
     @ApiPropertyOptional({ default: true })
     @IsOptional()
     @IsBoolean()
@@ -106,3 +111,16 @@ export class CreateLearningOutcomeDto {
 }
 
 export class UpdateLearningOutcomeDto extends PartialType(CreateLearningOutcomeDto) { }
+
+// ==================== BULK IMPORT DTOs ====================
+
+export class BulkImportItemDto {
+    @ApiProperty({ example: 'Sözcükte Anlam' })
+    @IsString()
+    unitName: string;
+
+    @ApiProperty({ example: 'Eş Anlamlı Sözcükler' })
+    @IsString()
+    topicName: string;
+}
+

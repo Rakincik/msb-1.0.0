@@ -12,7 +12,8 @@ import {
     ChevronLeft,
     FolderOpen,
     FileText,
-    BookOpen
+    BookOpen,
+    FileSpreadsheet
 } from 'lucide-react';
 import {
     Accordion,
@@ -30,9 +31,11 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { API_URL } from '@/lib/api-config';
 import { UnitDialog } from './unit-dialog';
+import { useConfirm } from '@/context/confirm-context';
 import { TopicDialog } from './topic-dialog';
 import { LessonDialog } from './lesson-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { BulkImportModal } from './bulk-import-modal';
 
 interface Topic {
     id: string;
@@ -68,6 +71,7 @@ interface ContentManagementModalProps {
 
 export function ContentManagementModal({ open, onOpenChange, examAreaId, connectedLessonIds = [], onUpdate }: ContentManagementModalProps) {
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
@@ -85,6 +89,7 @@ export function ContentManagementModal({ open, onOpenChange, examAreaId, connect
     // Quick add states
     const [newItemName, setNewItemName] = useState('');
     const [isAdding, setIsAdding] = useState(false);
+    const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
     useEffect(() => {
         if (open && accessToken) fetchTree();
@@ -155,7 +160,13 @@ export function ContentManagementModal({ open, onOpenChange, examAreaId, connect
     };
 
     const handleDelete = async (type: 'lesson' | 'unit' | 'topic', id: string) => {
-        if (!confirm('Silmek istediğinize emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Silme İşlemi',
+            description: 'Silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`${API_URL}/content/${type}s/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
@@ -271,11 +282,22 @@ export function ContentManagementModal({ open, onOpenChange, examAreaId, connect
                         {/* Header */}
                         <div className="h-14 border-b bg-white flex items-center px-6 justify-between shrink-0">
                             {selectedLesson ? (
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-slate-900 text-lg">{selectedLesson.name}</span>
-                                    <span className="text-muted-foreground">•</span>
-                                    <span className="text-sm text-slate-500">İçerik Ağacı</span>
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-900 text-lg">{selectedLesson.name}</span>
+                                        <span className="text-muted-foreground">•</span>
+                                        <span className="text-sm text-slate-500">İçerik Ağacı</span>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm"
+                                        onClick={() => setBulkImportOpen(true)}
+                                    >
+                                        <FileSpreadsheet className="h-4 w-4" />
+                                        Excel ile Yükle
+                                    </Button>
+                                </>
                             ) : (
                                 <div className="text-sm text-muted-foreground">Bir ders seçiniz...</div>
                             )}
@@ -407,6 +429,16 @@ export function ContentManagementModal({ open, onOpenChange, examAreaId, connect
                 topic={editingItem}
                 onSuccess={() => { fetchTree(); setEditingItem(null); }}
             />
+            {selectedLesson && (
+                <BulkImportModal
+                    open={bulkImportOpen}
+                    onOpenChange={setBulkImportOpen}
+                    lessonId={selectedLesson.id}
+                    lessonName={selectedLesson.name}
+                    accessToken={accessToken || undefined}
+                    onSuccess={() => { fetchTree(); }}
+                />
+            )}
         </Dialog>
     );
 }

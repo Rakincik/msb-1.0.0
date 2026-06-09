@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import { 
     Plus, Search, ChevronRight, ChevronDown, Users, BookOpen, 
     Settings, Trash2, Edit2, Copy, Video, Tent, Loader2, Check 
@@ -46,6 +47,7 @@ export interface Group {
 export default function GroupsPage() {
     const { user, accessToken } = useAuth();
     const { toast } = useToast();
+    const confirm = useConfirm();
     const [groups, setGroups] = useState<Group[]>([]);
     const [groupStudents, setGroupStudents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -157,7 +159,13 @@ export default function GroupsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Bu grubu silmek istediğinizden emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Grubu Sil',
+            description: 'Bu grubu silmek istediğinizden emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             await apiClient.delete(`/groups/${id}`);
             toast({ title: 'Başarılı', description: 'Grup silindi' });

@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import {
     ArrowLeft, User, Mail, Phone, Building, Calendar, Clock,
     Edit, Save, X, Loader2, Shield, BookOpen, Award, Activity,
@@ -113,6 +114,7 @@ export default function UserDetailPage() {
     const router = useRouter();
     const { user: currentUser, accessToken } = useAuth();
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const [user, setUser] = useState<UserDetail | null>(null);
     const [stats, setStats] = useState<UserStats | null>(null);
@@ -166,7 +168,14 @@ export default function UserDetailPage() {
     };
 
     const handleRemoveFromGroup = async (groupId: string) => {
-        if (!user || !confirm('Öğrenciyi bu gruptan çıkarmak istediğinize emin misiniz?')) return;
+        if (!user) return;
+        const confirmed = await confirm({
+            title: 'Gruptan Çıkarma',
+            description: 'Öğrenciyi bu gruptan çıkarmak istediğinize emin misiniz?',
+            confirmText: 'Çıkar',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         try {
             const res = await fetch(`${API_URL}/groups/${groupId}/students`, {
                 method: 'DELETE',

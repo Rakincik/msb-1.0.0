@@ -20,6 +20,7 @@ export class ContentService {
     // ==========================================
 
     async createLesson(dto: CreateLessonDto) {
+        const { examAreaIds, ...lessonData } = dto;
         // Code uniqueness kontrolü (tenant bazlı)
         const existing = await this.prisma.lesson.findFirst({
             where: { code: dto.code, tenantId: dto.tenantId || null },
@@ -30,8 +31,13 @@ export class ContentService {
         }
 
         return this.prisma.lesson.create({
-            data: dto,
-            include: { units: true },
+            data: {
+                ...lessonData,
+                examAreas: examAreaIds?.length ? {
+                    connect: examAreaIds.map(id => ({ id }))
+                } : undefined,
+            },
+            include: { units: true, examAreas: { select: { id: true, name: true, color: true } } },
         });
     }
 
@@ -46,6 +52,9 @@ export class ContentService {
             },
             orderBy: { order: 'asc' },
             include: {
+                examAreas: {
+                    select: { id: true, name: true, color: true }
+                },
                 units: {
                     where: { isActive: true },
                     orderBy: { order: 'asc' },
@@ -67,6 +76,9 @@ export class ContentService {
         const lesson = await this.prisma.lesson.findUnique({
             where: { id },
             include: {
+                examAreas: {
+                    select: { id: true, name: true, color: true }
+                },
                 units: {
                     where: { isActive: true },
                     orderBy: { order: 'asc' },
@@ -97,6 +109,7 @@ export class ContentService {
     }
 
     async updateLesson(id: string, dto: UpdateLessonDto) {
+        const { examAreaIds, ...lessonData } = dto;
         const lesson = await this.prisma.lesson.findUnique({ where: { id } });
 
         if (!lesson) {
@@ -105,7 +118,13 @@ export class ContentService {
 
         return this.prisma.lesson.update({
             where: { id },
-            data: dto,
+            data: {
+                ...lessonData,
+                examAreas: examAreaIds ? {
+                    set: examAreaIds.map(id => ({ id }))
+                } : undefined,
+            },
+            include: { examAreas: { select: { id: true, name: true, color: true } } },
         });
     }
 
@@ -314,4 +333,117 @@ export class ContentService {
 
         return lessons;
     }
+
+    async bulkImportToLesson(lessonId: string, items: { unitName: string; topicName: string }[]) {
+        const lesson = await this.prisma.lesson.findUnique({
+            where: { id: lessonId },
+        });
+
+        if (!lesson) {
+            throw new NotFoundException('Ders bulunamadı');
+        }
+
+        // 1. Derse ait tüm mevcut üniteleri ve altındaki konuları çek
+        const existingUnits = await this.prisma.unit.findMany({
+            where: { lessonId },
+            include: { topics: true },
+        });
+
+        // Ünite isimlerini hızlı arama için eşleme tablosuna (map) al
+        const existingUnitsMap = new Map<string, typeof existingUnits[0]>();
+        for (const unit of existingUnits) {
+            existingUnitsMap.set(unit.name.trim().toLowerCase(), unit);
+        }
+
+        // Mevcut en büyük ünite sırasını bul
+        let maxUnitOrder = existingUnits.reduce((max, u) => Math.max(max, u.order || 0), -1);
+
+        // 2. Gelen verileri filtrele ve temizle
+        const validItems = items
+            .map(item => ({
+                unitName: item.unitName?.trim() || '',
+                topicName: item.topicName?.trim() || '',
+            }))
+            .filter(item => item.unitName !== '' && item.topicName !== '');
+
+        // 3. Yeni üniteleri tespit et ve sırayla oluştur (ID'leri elde etmek için)
+        const newUnitNames = Array.from(
+            new Set(
+                validItems
+                    .map(item => item.unitName)
+                    .filter(name => !existingUnitsMap.has(name.toLowerCase()))
+            )
+        );
+
+        for (const name of newUnitNames) {
+            maxUnitOrder++;
+            const newUnit = await this.prisma.unit.create({
+                data: {
+                    name,
+                    lessonId,
+                    order: maxUnitOrder,
+                    isActive: true,
+                },
+                include: { topics: true },
+            });
+            existingUnitsMap.set(name.toLowerCase(), newUnit);
+        }
+
+        // 4. Konu sırasını takip etmek ve mükerrer kontrolü için map/set yapılarını kur
+        const maxTopicOrderMap = new Map<string, number>(); // unitId -> maxOrder
+        const existingTopicsSet = new Set<string>(); // "unitId:topicname_lowercase" -> boolean
+
+        for (const [_, unit] of existingUnitsMap) {
+            const maxOrder = unit.topics.reduce((max, t) => Math.max(max, t.order || 0), -1);
+            maxTopicOrderMap.set(unit.id, maxOrder);
+
+            for (const topic of unit.topics) {
+                existingTopicsSet.add(`${unit.id}:${topic.name.trim().toLowerCase()}`);
+            }
+        }
+
+        // 5. Yeni konuları belirle
+        const newTopicsToCreate: { name: string; unitId: string; order: number }[] = [];
+        const processedInSession = new Set<string>(); // "unitId:topicname_lowercase"
+
+        for (const item of validItems) {
+            const unit = existingUnitsMap.get(item.unitName.toLowerCase());
+            if (!unit) continue;
+
+            const topicKey = `${unit.id}:${item.topicName.toLowerCase()}`;
+            if (!existingTopicsSet.has(topicKey) && !processedInSession.has(topicKey)) {
+                processedInSession.add(topicKey);
+
+                let currentMaxOrder = maxTopicOrderMap.get(unit.id) ?? -1;
+                currentMaxOrder++;
+                maxTopicOrderMap.set(unit.id, currentMaxOrder);
+
+                newTopicsToCreate.push({
+                    name: item.topicName,
+                    unitId: unit.id,
+                    order: currentMaxOrder,
+                });
+            }
+        }
+
+        // 6. Yeni konuları tek seferde topluca ekle
+        if (newTopicsToCreate.length > 0) {
+            await this.prisma.topic.createMany({
+                data: newTopicsToCreate.map(t => ({
+                    name: t.name,
+                    unitId: t.unitId,
+                    order: t.order,
+                    isActive: true,
+                })),
+            });
+        }
+
+        return {
+            success: true,
+            unitsCreated: newUnitNames.length,
+            topicsCreated: newTopicsToCreate.length,
+            totalProcessed: validItems.length,
+        };
+    }
 }
+

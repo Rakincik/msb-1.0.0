@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import { API_URL } from '@/lib/api-config';
 import {
     Plus,
@@ -338,6 +339,7 @@ function AssignAdminSheet({
 export default function TenantsPage() {
     const { accessToken } = useAuth();
     const { toast } = useToast();
+    const confirm = useConfirm();
     
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -386,7 +388,13 @@ export default function TenantsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Bu kurumu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
+        const confirmed = await confirm({
+            title: 'Kurum Silme',
+            description: 'Bu kurumu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
         
         try {
             const res = await fetch(`${API_URL}/tenants/${id}`, {

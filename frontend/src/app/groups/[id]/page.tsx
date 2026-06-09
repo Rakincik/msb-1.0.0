@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import {
     ArrowLeft, Users, FileQuestion, BookOpen, FileText, Loader2,
     Edit, UserPlus, X, Check
@@ -55,6 +56,7 @@ export default function GroupDetailPage() {
     const router = useRouter();
     const { user , accessToken } = useAuth();
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const [group, setGroup] = useState<Group | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +121,13 @@ export default function GroupDetailPage() {
     };
 
     const handleRemoveStudent = async (userId: string) => {
-        if (!confirm('Bu öğrenciyi gruptan çıkarmak istediğinizden emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Öğrenci Çıkarma',
+            description: 'Bu öğrenciyi gruptan çıkarmak istediğinizden emin misiniz?',
+            confirmText: 'Çıkar',
+            isDangerous: true,
+        });
+        if (!confirmed) return;
 
         try {
             await apiClient.delete(`/groups/${params.id}/students`, { userIds: [userId] });

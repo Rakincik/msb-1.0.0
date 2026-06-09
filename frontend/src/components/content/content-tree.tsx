@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
     ChevronRight,
     ChevronDown,
@@ -15,9 +15,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { useConfirm } from '@/context/confirm-context';
 import { UnitDialog } from './unit-dialog';
 import { TopicDialog } from './topic-dialog';
 import { API_URL } from '@/lib/api-config';
@@ -69,10 +69,6 @@ export function ContentTree({ lessons, onRefresh }: ContentTreeProps) {
 function LessonItem({ lesson, onRefresh }: { lesson: Lesson; onRefresh: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [unitDialogOpen, setUnitDialogOpen] = useState(false);
-
-    // We don't implement delete/edit for lesson here as it's done in the parent list, 
-    // but we could adding it here for completeness if needed.
-    // For now, this tree view focuses on the hierarchy INSIDE a lesson.
 
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg bg-card">
@@ -126,12 +122,19 @@ function UnitItem({ unit, lessonId, onRefresh }: { unit: Unit; lessonId: string;
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [createTopicOpen, setCreateTopicOpen] = useState(false);
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const { accessToken } = useAuth();
 
     const handleDelete = async () => {
-        if (!confirm('Bu üniteyi silmek istediğinize emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Ünite Silme',
+            description: 'Bu üniteyi silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
 
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`${API_URL}/content/units/${unit.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
@@ -215,12 +218,19 @@ function UnitItem({ unit, lessonId, onRefresh }: { unit: Unit; lessonId: string;
 function TopicItem({ topic, unitId, onRefresh }: { topic: Topic; unitId: string; onRefresh: () => void }) {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const { toast } = useToast();
+    const confirm = useConfirm();
 
     const { accessToken } = useAuth();
 
     const handleDelete = async () => {
-        if (!confirm('Bu konuyu silmek istediğinize emin misiniz?')) return;
+        const confirmed = await confirm({
+            title: 'Konu Silme',
+            description: 'Bu konuyu silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            isDangerous: true,
+        });
 
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`${API_URL}/content/topics/${topic.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
