@@ -74,7 +74,7 @@ export class SelfTestService {
     const where: Prisma.QuestionWhereInput = {
       isActive: true,
       deletedAt: null,
-      examAreas: { some: { id: dto.examAreaId } },
+      examAreaQuestions: { some: { examAreaId: dto.examAreaId } },
     };
 
     if (dto.difficulties && dto.difficulties.length > 0) {

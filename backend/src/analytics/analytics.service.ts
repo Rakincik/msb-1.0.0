@@ -405,7 +405,7 @@ export class AnalyticsService {
         // Soru bankası başına soru sayısı
         const examAreas = await this.prisma.examArea.findMany({
             include: {
-                _count: { select: { questions: true } },
+                _count: { select: { examAreaQuestions: true } },
                 students: { select: { id: true } },
                 groups: { select: { id: true } }
             }
@@ -415,7 +415,7 @@ export class AnalyticsService {
             id: ea.id,
             name: ea.name,
             color: ea.color,
-            questionCount: ea._count.questions,
+            questionCount: ea._count.examAreaQuestions,
             studentCount: ea.students.length,
             groupCount: ea.groups.length
         })).sort((a, b) => b.questionCount - a.questionCount);

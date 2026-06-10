@@ -137,7 +137,7 @@ async function main() {
                             { type: "paragraph", content: [{ type: "text", text: `Örnek Soru ${i}: 2 + ${i} kaç eder?` }] }
                         ]
                     },
-                    examAreas: { connect: { id: examArea.id } },
+                    examAreaQuestions: { create: [{ examAreaId: examArea.id, orderNumber: 0 }] },
                     topics: { connect: { id: topic.id } },
                     createdById: student.id,
                     type: 'MULTIPLE_CHOICE',
