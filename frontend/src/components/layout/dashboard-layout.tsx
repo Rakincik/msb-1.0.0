@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { cn } from '@/lib/utils';
 import {
     Sidebar,
     SidebarContent,
@@ -124,11 +125,29 @@ export function AppSidebar() {
                                     <SidebarMenuButton
                                         asChild
                                         isActive={pathname === item.href}
-                                        className="gap-4 px-4 py-6 min-h-[52px] rounded-2xl transition-all hover:bg-slate-100 group"
+                                        className={cn(
+                                            "gap-4 px-4 py-6 min-h-[52px] rounded-2xl transition-all group relative overflow-hidden",
+                                            pathname === item.href
+                                                ? "bg-slate-100/80 shadow-sm"
+                                                : "hover:bg-slate-50"
+                                        )}
                                     >
                                         <Link href={item.href} className="flex items-center w-full">
-                                            <item.icon className="h-6 w-6 text-slate-500 group-hover:text-primary transition-colors duration-200" />
-                                            <span className="font-semibold text-[15px] text-slate-700 group-hover:text-slate-900 tracking-wide">{item.title}</span>
+                                            {pathname === item.href && (
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-primary rounded-r-full" />
+                                            )}
+                                            <item.icon className={cn(
+                                                "h-6 w-6 transition-colors duration-200",
+                                                pathname === item.href ? "text-primary" : "text-slate-500 group-hover:text-slate-800"
+                                            )} />
+                                            <span className={cn(
+                                                "text-[15px] tracking-wide ml-3 transition-all",
+                                                pathname === item.href 
+                                                    ? "font-bold text-slate-900" 
+                                                    : "font-semibold text-slate-700 group-hover:text-slate-900"
+                                            )}>
+                                                {item.title}
+                                            </span>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

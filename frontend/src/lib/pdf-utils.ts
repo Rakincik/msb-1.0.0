@@ -107,7 +107,7 @@ export function analyzeCanvas(canvas: HTMLCanvasElement): Rect[] {
  * Uses heuristics like "A)", "A.", "(A)" to identify options.
  */
 export function parseQuestionsFromOCR(text: string) {
-    let cleanText = text
+    const cleanText = text
         .replace(/\|/g, 'I')
         .replace(/\r\n/g, '\n');
 

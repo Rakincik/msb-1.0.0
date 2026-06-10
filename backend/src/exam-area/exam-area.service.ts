@@ -28,7 +28,7 @@ export class ExamAreaService {
                         lessons: true,
                         exams: true,
                         students: true,
-                        questions: true,
+                        examAreaQuestions: true,
                     },
                 },
             },
@@ -202,7 +202,7 @@ export class ExamAreaService {
                         lessons: true,
                         exams: true,
                         students: true,
-                        questions: true,
+                        examAreaQuestions: true,
                     },
                 },
             },
@@ -244,6 +244,39 @@ export class ExamAreaService {
             this.prisma.examArea.update({
                 where: { id: item.id },
                 data: { order: item.order },
+            })
+        );
+
+        await this.prisma.$transaction(updates);
+        return { success: true };
+    }
+
+    async getQuestions(examAreaId: string) {
+        const relations = await this.prisma.examAreaQuestion.findMany({
+            where: { examAreaId },
+            orderBy: { orderNumber: 'asc' },
+            include: {
+                question: {
+                    include: {
+                        topics: { select: { id: true, name: true } },
+                    }
+                }
+            }
+        });
+        // Sadece soru objelerini dön, orderNumber sıralı olarak
+        return relations.map(r => r.question);
+    }
+
+    async reorderQuestions(examAreaId: string, items: { id: string; order: number }[]) {
+        const updates = items.map(item =>
+            this.prisma.examAreaQuestion.update({
+                where: {
+                    examAreaId_questionId: {
+                        examAreaId: examAreaId,
+                        questionId: item.id
+                    }
+                },
+                data: { orderNumber: item.order },
             })
         );
 

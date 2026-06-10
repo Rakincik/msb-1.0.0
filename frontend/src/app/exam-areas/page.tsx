@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Trash2, Edit, Save, Loader2, Sparkles, Upload, X, MapPin } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, Loader2, Sparkles, Upload, X, MapPin, LayoutGrid, List as ListIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { cn, getFileUrl } from '@/lib/utils';
@@ -69,6 +69,11 @@ export default function QuestionBanksPage() {
     const [editingBank, setEditingBank] = useState<QuestionBank | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // View & Pagination State
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(12);
 
     // Active Tab in the Modal
     const [activeTab, setActiveTab] = useState<'content' | 'access'>('content');
@@ -214,6 +219,14 @@ export default function QuestionBanksPage() {
         }
     };
 
+    const totalPages = Math.ceil(questionBanks.length / pageSize);
+    const paginatedBanks = questionBanks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        setCurrentPage(1);
+    };
+
     return (
         <DashboardLayout>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -221,11 +234,16 @@ export default function QuestionBanksPage() {
                     <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         Soru Bankalarım
                     </h1>
-                    <p className="text-muted-foreground">
-                        HAKİMLİK, KPSS, KAYMAKAMLIK gibi soru bankalarını yönetin.
-                    </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center flex-wrap">
+                    <div className="flex items-center bg-white border rounded-lg p-1 mr-1 shadow-sm">
+                        <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-2 rounded-md" onClick={() => setViewMode('grid')}>
+                            <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                        <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-2 rounded-md" onClick={() => setViewMode('list')}>
+                            <ListIcon className="h-4 w-4" />
+                        </Button>
+                    </div>
                     <Link href="/lessons">
                         <Button variant="outline" className="shadow-lg hover:shadow-xl transition-all border-blue-500 text-blue-600 hover:bg-blue-50">
                             <MapPin className="mr-2 h-4 w-4" /> İçerik Ağacı / Dersler
@@ -415,50 +433,126 @@ export default function QuestionBanksPage() {
                     <p className="text-muted-foreground mb-6">İlk soru bankanızı oluşturun!</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {questionBanks.map((bank) => (
-                        <Card key={bank.id} className={cn("overflow-hidden hover:shadow-lg transition-all group", !bank.isActive && "opacity-60 grayscale")}>
-                            <div className="h-32 relative bg-muted" style={{ backgroundColor: bank.color || PRESET_COLORS[0] }}>
-                                {bank.coverImage && <img src={getFileUrl(bank.coverImage)} alt={bank.name} className="absolute inset-0 w-full h-full object-cover" />}
-                                <div className="absolute top-4 right-4 flex gap-2">
-                                    {bank.isNew && <Badge variant="secondary" className="bg-white/90 text-black hover:bg-white border-0 shadow-sm font-semibold">YENİ</Badge>}
-                                </div>
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-6">
-                                    <h3 className="text-xl font-bold text-white mb-1 group-hover:scale-105 transition-transform origin-left">{bank.name}</h3>
-                                </div>
-                            </div>
-                            <CardContent className="p-6">
-                                <p className="text-sm text-muted-foreground line-clamp-2 h-10 mb-4">{bank.description || 'Açıklama girilmemiş.'}</p>
-                                <div className="grid grid-cols-3 gap-4 py-4 border-y mb-4">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold">{bank._count?.lessons || 0}</div>
-                                        <div className="text-xs text-muted-foreground uppercase tracking-wider">Ders</div>
+                <div className="space-y-6">
+                    {viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                            {paginatedBanks.map((bank) => (
+                                <Card key={bank.id} className={cn("overflow-hidden hover:shadow-lg transition-all group flex flex-col h-full", !bank.isActive && "opacity-60 grayscale")}>
+                                    <div className="h-24 relative bg-muted shrink-0" style={{ backgroundColor: bank.color || PRESET_COLORS[0] }}>
+                                        {bank.coverImage && <img src={getFileUrl(bank.coverImage)} alt={bank.name} className="absolute inset-0 w-full h-full object-cover" />}
+                                        <div className="absolute top-2 right-2 flex gap-1">
+                                            {bank.isNew && <Badge variant="secondary" className="bg-white/90 text-black text-[10px] px-1.5 py-0 h-4 border-0 shadow-sm font-bold">YENİ</Badge>}
+                                        </div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-3">
+                                            <h3 className="text-sm font-bold text-white mb-0.5 group-hover:scale-[1.02] transition-transform origin-left line-clamp-2 leading-tight">{bank.name}</h3>
+                                        </div>
                                     </div>
-                                    <div className="text-center border-l border-r">
-                                        <div className="text-2xl font-bold">{bank._count?.exams || 0}</div>
-                                        <div className="text-xs text-muted-foreground uppercase tracking-wider">Alt Sınav</div>
+                                    <CardContent className="p-4 flex-1 flex flex-col">
+                                        <div className="grid grid-cols-3 gap-2 py-3 border-y mb-4 mt-auto">
+                                            <div className="text-center">
+                                                <div className="text-lg font-bold">{bank._count?.lessons || 0}</div>
+                                                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Ders</div>
+                                            </div>
+                                            <div className="text-center border-l border-r">
+                                                <div className="text-lg font-bold">{bank._count?.exams || 0}</div>
+                                                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Sınav</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg font-bold">{bank._count?.students || 0}</div>
+                                                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Öğrenci</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-1.5">
+                                            <Link href={`/exam-areas/${bank.id}`} className="flex-1">
+                                                <Button size="sm" className="w-full bg-slate-900 border-none shadow-md hover:bg-slate-800 text-xs h-8">
+                                                    İçeriğe Git
+                                                </Button>
+                                            </Link>
+                                            <Button variant="outline" size="icon" onClick={() => openEdit(bank)} className="h-8 w-8 border-slate-200">
+                                                <Edit className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button variant="destructive" size="icon" onClick={(e) => handleDelete(bank.id, e)} className="h-8 w-8 shadow-sm">
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            {paginatedBanks.map((bank) => (
+                                <div key={bank.id} className={cn("bg-white border rounded-xl p-3 flex flex-col sm:flex-row items-center gap-4 hover:shadow-md transition-shadow group", !bank.isActive && "opacity-60 grayscale")}>
+                                    <div className="w-full sm:w-32 h-20 relative rounded-lg overflow-hidden bg-muted shrink-0 shadow-inner" style={{ backgroundColor: bank.color || PRESET_COLORS[0] }}>
+                                        {bank.coverImage && <img src={getFileUrl(bank.coverImage)} alt={bank.name} className="absolute inset-0 w-full h-full object-cover" />}
                                     </div>
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold">{bank._count?.students || 0}</div>
-                                        <div className="text-xs text-muted-foreground uppercase tracking-wider">Öğrenci</div>
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="text-base font-bold text-slate-800 truncate">{bank.name}</h3>
+                                            {bank.isNew && <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-0 h-5 px-2 text-[10px] font-bold shadow-sm">YENİ</Badge>}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground truncate">{bank.description || 'Açıklama girilmemiş.'}</p>
                                     </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Link href={`/exam-areas/${bank.id}`} className="flex-1">
-                                        <Button className="w-full bg-slate-900 border-none shadow-md hover:bg-slate-800">
-                                            İçeriğe Git
+                                    <div className="flex items-center justify-between sm:justify-start gap-6 sm:px-6 w-full sm:w-auto sm:border-l border-slate-100 my-2 sm:my-0">
+                                        <div className="text-center">
+                                            <div className="text-sm font-bold text-slate-700">{bank._count?.lessons || 0}</div>
+                                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Ders</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-sm font-bold text-slate-700">{bank._count?.exams || 0}</div>
+                                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Sınav</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-sm font-bold text-slate-700">{bank._count?.students || 0}</div>
+                                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Öğr</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 sm:border-l sm:pl-4 border-slate-100 w-full sm:w-auto justify-end">
+                                        <Link href={`/exam-areas/${bank.id}`}>
+                                            <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-xs h-8 shadow-sm">
+                                                İçeriğe Git
+                                            </Button>
+                                        </Link>
+                                        <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(bank)}>
+                                            <Edit className="h-4 w-4" />
                                         </Button>
-                                    </Link>
-                                    <Button variant="outline" size="icon" onClick={() => openEdit(bank)} className="border-slate-200">
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="destructive" size="icon" onClick={(e) => handleDelete(bank.id, e)} className="shadow-sm">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                        <Button variant="destructive" size="sm" className="h-8 w-8 p-0" onClick={(e) => handleDelete(bank.id, e)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                            ))}
+                        </div>
+                    )}
+
+                    {totalPages > 0 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t mt-8 gap-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>Sayfa başına:</span>
+                                <select 
+                                    className="border border-slate-200 rounded-md px-2 py-1.5 bg-white text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+                                    value={pageSize}
+                                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                                >
+                                    <option value={12}>12</option>
+                                    <option value={24}>24</option>
+                                    <option value={48}>48</option>
+                                </select>
+                                <span>kayıt</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border p-1">
+                                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <div className="text-sm font-medium px-3 text-slate-600 border-x h-8 flex items-center">
+                                    {currentPage} / {totalPages}
+                                </div>
+                                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </DashboardLayout>

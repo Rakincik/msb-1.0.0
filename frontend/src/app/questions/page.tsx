@@ -6,6 +6,7 @@ import { AddQuestionModal } from '@/components/questions/add-question-modal';
 import { ManualQuestionModal } from '@/components/questions/manual-question-modal';
 import dynamic from 'next/dynamic';
 import { AssignToExamAreaModal } from '@/components/questions/assign-to-exam-area-modal';
+import { ReorderQuestionsModal } from '@/components/questions/reorder-questions-modal';
 
 const PDFCropperModal = dynamic(() => import('@/components/questions/pdf-cropper-modal').then((mod) => mod.PDFCropperModal), { ssr: false });
 import { Button } from '@/components/ui/button';
@@ -106,6 +107,7 @@ export default function QuestionsPage() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const [isAssignExamAreaOpen, setIsAssignExamAreaOpen] = useState(false);
+    const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
     const [detailQuestion, setDetailQuestion] = useState<Question | null>(null);
 
     // Data State
@@ -544,6 +546,12 @@ export default function QuestionsPage() {
                     onSuccess={fetchQuestions}
                     onBack={() => setIsMethodSelectOpen(true)}
                 />
+                <ReorderQuestionsModal
+                    open={isReorderModalOpen}
+                    onOpenChange={setIsReorderModalOpen}
+                    examAreaId={selectedExamAreaFilter}
+                    onSuccess={fetchQuestions}
+                />
             </div>
 
             <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
@@ -661,6 +669,18 @@ export default function QuestionsPage() {
                                     <SelectItem value="most_used">Çok Kullanılan</SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {selectedExamAreaFilter && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-9 gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                                    onClick={() => setIsReorderModalOpen(true)}
+                                >
+                                    <ArrowUpDown className="h-4 w-4" />
+                                    Sıralamayı Değiştir
+                                </Button>
+                            )}
 
                             {/* Filter Popover */}
                             <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>

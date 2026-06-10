@@ -99,6 +99,20 @@ export class ExamAreaController {
         return this.examAreaService.reorder(items);
     }
 
+    @Get(':id/questions')
+    @ApiOperation({ summary: 'Sınav alanı içindeki soruları sıralı getir' })
+    getQuestions(@Param('id') id: string) {
+        return this.examAreaService.getQuestions(id);
+    }
+
+    @Post(':id/reorder-questions')
+    @UseGuards(RolesGuard)
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.TEACHER)
+    @ApiOperation({ summary: 'Sınav alanı içindeki soruları yeniden sırala' })
+    reorderQuestions(@Param('id') id: string, @Body() items: { id: string; order: number }[]) {
+        return this.examAreaService.reorderQuestions(id, items);
+    }
+
     @Post(':id/groups/:groupId')
     @UseGuards(RolesGuard)
     @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.TEACHER)

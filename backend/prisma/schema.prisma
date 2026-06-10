@@ -143,7 +143,7 @@ model ExamArea {
   lessons   Lesson[]   @relation("ExamAreaLessons")
   exams     Exam[]     @relation("ExamAreaExams")
   students  User[]     @relation("UserExamAreas")
-  questions Question[] @relation("ExamAreaQuestions")
+  examAreaQuestions ExamAreaQuestion[]
   groups    Group[]    @relation("ExamAreaGroups")
 
   tenantId  String?
@@ -224,7 +224,7 @@ model Question {
   learningOutcome   LearningOutcome?       @relation(fields: [learningOutcomeId], references: [id])
   groups            Group[]                @relation("GroupQuestions")
   topics            Topic[]                @relation("QuestionToTopic")
-  examAreas         ExamArea[]             @relation("ExamAreaQuestions")
+  examAreaQuestions ExamAreaQuestion[]
   userProgress      UserQuestionProgress[]
   reports           QuestionReport[]
 
@@ -290,6 +290,21 @@ model ExamQuestion {
   @@unique([examId, orderNumber])
   @@index([examId])
   @@index([questionId])
+}
+
+model ExamAreaQuestion {
+  id          String   @id @default(cuid())
+  orderNumber Int      @default(0)
+  createdAt   DateTime @default(now())
+  examAreaId  String
+  questionId  String
+  examArea    ExamArea @relation(fields: [examAreaId], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([examAreaId, questionId])
+  @@index([examAreaId])
+  @@index([questionId])
+  @@index([orderNumber])
 }
 
 model PDFDocument {

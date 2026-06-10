@@ -63,6 +63,8 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
     // Form State
     const [questionText, setQuestionText] = useState('');
     const [questionImage, setQuestionImage] = useState<string | null>(null);
+    const [explanationText, setExplanationText] = useState('');
+    const [explanationImage, setExplanationImage] = useState<string | null>(null);
     const [options, setOptions] = useState<Record<string, { text: string; image: string | null }>>({
         A: { text: '', image: null }, B: { text: '', image: null }, C: { text: '', image: null },
         D: { text: '', image: null }, E: { text: '', image: null },
@@ -151,6 +153,8 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
         if (questionToEdit && open) {
             setQuestionText(questionToEdit.content.text || '');
             setQuestionImage(questionToEdit.content.image || null);
+            setExplanationText(questionToEdit.explanation?.text || '');
+            setExplanationImage(questionToEdit.explanation?.image || null);
             setOptions({
                 A: { text: '', image: null }, B: { text: '', image: null }, C: { text: '', image: null },
                 D: { text: '', image: null }, E: { text: '', image: null },
@@ -178,7 +182,7 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
     }, [questionToEdit, open, preSelectedBankId, lessons]);
 
     // Image upload
-    const handleImageUpload = async (file: File, target: 'question' | typeof OPTIONS[number]) => {
+    const handleImageUpload = async (file: File, target: 'question' | 'explanation' | typeof OPTIONS[number]) => {
         setUploadingField(target);
         try {
             const formData = new FormData();
@@ -189,6 +193,7 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
             if (!res.ok) throw new Error('Yüklenemedi');
             const data = await res.json();
             if (target === 'question') setQuestionImage(data.url);
+            else if (target === 'explanation') setExplanationImage(data.url);
             else setOptions(prev => ({ ...prev, [target]: { ...(prev[target] || {}), image: data.url } }));
             toast({ title: 'Görsel yüklendi ✓', duration: 1500 });
         } catch (error) {
@@ -232,20 +237,32 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
             const payload: any = {
                 content: { text: questionText, image: questionImage, type: 'text_image' },
                 options: Object.fromEntries(OPTIONS.map(opt => [opt, { text: options[opt].text, image: options[opt].image }])),
+                explanation: (explanationText.trim() || explanationImage) ? { text: explanationText, image: explanationImage, type: 'text_image' } : null,
                 correctAnswer, difficulty, topicIds: selectedTopics,
-                videoSolution: videoSolution || null, learningOutcomeId: selectedLearningOutcome,
+                videoSolution: videoSolution || undefined, learningOutcomeId: selectedLearningOutcome || undefined,
                 type: 'MULTIPLE_CHOICE',
                 examAreaIds: selectedExamAreas.length > 0 ? selectedExamAreas : undefined,
                 isPastQuestion,
-                pastExamName: isPastQuestion && pastExamName ? pastExamName : null,
-                pastExamYear: isPastQuestion && pastExamYear ? Number(pastExamYear) : null,
+                pastExamName: isPastQuestion && pastExamName ? pastExamName : undefined,
+                pastExamYear: isPastQuestion && pastExamYear ? Number(pastExamYear) : undefined,
             };
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
                 body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error(questionToEdit ? 'Güncellenemedi' : 'Oluşturulamadı');
+            
+            if (!res.ok) {
+                let errorMsg = questionToEdit ? 'Güncellenemedi' : 'Oluşturulamadı';
+                try {
+                    const errorData = await res.json();
+                    errorMsg = errorData.message || errorData.error || errorMsg;
+                    if (Array.isArray(errorMsg)) errorMsg = errorMsg[0]; // If validation error array
+                } catch (e) {
+                    // Ignore json parse error
+                }
+                throw new Error(errorMsg);
+            }
 
             toast({ title: 'Başarılı ✓', description: questionToEdit ? 'Soru güncellendi.' : 'Soru havuza eklendi.' });
             onSuccess?.();
@@ -259,8 +276,9 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
                 if (!questionToEdit) resetForm();
                 onOpenChange(false);
             }
-        } catch (error) {
-            toast({ title: 'Hata', description: 'Bir sorun oluştu.', variant: 'destructive' });
+        } catch (error: any) {
+            console.error('Question submit error:', error);
+            toast({ title: 'Hata', description: error.message || 'Bir sorun oluştu.', variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
@@ -268,6 +286,7 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
 
     const resetForm = () => {
         setQuestionText(''); setQuestionImage(null);
+        setExplanationText(''); setExplanationImage(null);
         setOptions({ A: { text: '', image: null }, B: { text: '', image: null }, C: { text: '', image: null }, D: { text: '', image: null }, E: { text: '', image: null } });
         setCorrectAnswer('A'); setDifficulty('MEDIUM'); setVideoSolution('');
         setIsPastQuestion(false); setPastExamName(''); setPastExamYear('');
@@ -499,6 +518,55 @@ export function ManualQuestionModal({ open, onOpenChange, onSuccess, onBack, que
                                 </div>
                             )}
                             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'question')} />
+
+                            {/* Çözüm Açıklaması */}
+                            <div className="bg-white border rounded-xl p-4 shadow-sm relative">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                                        <div className="w-1 h-3.5 bg-indigo-500 rounded-full" />
+                                        Çözüm Açıklaması <span className="text-[10px] text-muted-foreground normal-case font-normal">(Opsiyonel)</span>
+                                    </h4>
+                                    {explanationImage && (
+                                        <Button variant="ghost" size="sm" onClick={() => setExplanationImage(null)} className="h-6 text-[10px] text-red-600 hover:bg-red-50 px-2">
+                                            <Trash2 className="h-3 w-3 mr-1" /> Görseli Sil
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="space-y-4">
+                                    <RichTextEditor
+                                        className="min-h-[120px] text-sm bg-slate-50/50 border rounded-lg"
+                                        value={explanationText}
+                                        onChange={setExplanationText}
+                                        placeholder="Öğrenciler için çözüm açıklamasını buraya yazın... İtalik, kalın ve renkli metinler kullanabilirsiniz."
+                                    />
+
+                                    {explanationImage ? (
+                                        <div className="relative group rounded-lg border border-slate-200 bg-white p-2">
+                                            <img src={normalizeImageUrl(explanationImage)} alt="Çözüm Görseli" className="w-full max-h-[200px] object-contain rounded-md" />
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 rounded-lg p-4 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer"
+                                            onClick={() => {
+                                                const input = document.createElement('input');
+                                                input.type = 'file';
+                                                input.accept = 'image/*';
+                                                input.onchange = (e: any) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'explanation');
+                                                input.click();
+                                            }}
+                                        >
+                                            {uploadingField === 'explanation' ? (
+                                                <Loader2 className="h-5 w-5 text-indigo-500 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Upload className="h-4 w-4 text-slate-400" />
+                                                    <p className="text-[10px] font-medium text-slate-500">Çözüm görseli eklemek için tıklayın</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
                             {/* Video Solution */}
                             <div className="bg-white border rounded-xl p-3">

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
-import { Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Flag, PanelRightClose, PanelRightOpen, Moon, Sun, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Flag, PanelRightClose, PanelRightOpen, Moon, Sun, AlertTriangle, AlertOctagon, Lightbulb, PlayCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ interface Question {
     }[];
     correctAnswer: string;
     explanation?: any;
+    videoSolution?: string;
 }
 
 interface PracticeModalProps {
@@ -57,6 +58,7 @@ export function PracticeModal({ open, onOpenChange, topicId, lessonId, topicName
     // UI State
     const [view, setView] = useState<'practice' | 'summary'>('practice');
     const [isNavOpen, setIsNavOpen] = useState(false);
+    const [showSolutionMap, setShowSolutionMap] = useState<Record<string, boolean>>({});
     
     useEffect(() => {
         if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
@@ -81,6 +83,7 @@ export function PracticeModal({ open, onOpenChange, topicId, lessonId, topicName
             setResults({});
             setDrawings({});
             setFlags({});
+            setShowSolutionMap({});
             setView('practice');
         }
     }, [open, topicId, lessonId, mode]);
@@ -583,25 +586,71 @@ export function PracticeModal({ open, onOpenChange, topicId, lessonId, topicName
                                             </div>
 
                                             {/* ÇÖZÜM ALANI (Cevaplandıktan sonra görünür) */}
-                                            {results[currentQuestion.id] !== undefined && currentQuestion.explanation && (
+                                            {results[currentQuestion.id] !== undefined && (currentQuestion.explanation || currentQuestion.videoSolution) && (
                                                 <div className="mt-8 select-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                                    <div className={cn(
-                                                        "rounded-2xl border-2 p-6 shadow-sm",
-                                                        results[currentQuestion.id] 
-                                                            ? "bg-emerald-50/50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" 
-                                                            : "bg-indigo-50/50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30"
-                                                    )}>
-                                                        <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
-                                                            {results[currentQuestion.id] ? (
-                                                                <span className="text-emerald-600">Tebrikler! İşte Çözüm:</span>
-                                                            ) : (
-                                                                <span className="text-indigo-600">Üzülme, Öğrenme Fırsatı! Videolu Çözüm:</span>
+                                                    {!showSolutionMap[currentQuestion.id] ? (
+                                                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                                                            {currentQuestion.explanation && (
+                                                                <Button
+                                                                    onClick={() => setShowSolutionMap(prev => ({ ...prev, [currentQuestion.id]: true }))}
+                                                                    className="w-full sm:w-auto rounded-xl h-12 px-6 shadow-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold"
+                                                                >
+                                                                    <Lightbulb className="mr-2 h-5 w-5" />
+                                                                    Çözümü İncele
+                                                                </Button>
                                                             )}
-                                                        </h3>
-                                                        <div className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
-                                                            {renderContent(currentQuestion.explanation)}
+                                                            {currentQuestion.videoSolution && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="w-full sm:w-auto rounded-xl h-12 px-6 shadow-sm border-rose-200 text-rose-700 hover:bg-rose-50 bg-white font-bold"
+                                                                    onClick={() => window.open(currentQuestion.videoSolution, '_blank')}
+                                                                >
+                                                                    <PlayCircle className="mr-2 h-5 w-5" />
+                                                                    Video Çözüm
+                                                                </Button>
+                                                            )}
                                                         </div>
-                                                    </div>
+                                                    ) : (
+                                                        <div className={cn(
+                                                            "rounded-2xl border-2 p-6 shadow-sm relative animate-in fade-in zoom-in-95 duration-300",
+                                                            results[currentQuestion.id] 
+                                                                ? "bg-emerald-50/50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" 
+                                                                : "bg-indigo-50/50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30"
+                                                        )}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => setShowSolutionMap(prev => ({ ...prev, [currentQuestion.id]: false }))}
+                                                                className="absolute top-4 right-4 h-8 px-3 text-xs rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800"
+                                                            >
+                                                                Çözümü Gizle
+                                                            </Button>
+                                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
+                                                                {results[currentQuestion.id] ? (
+                                                                    <span className="text-emerald-600">Tebrikler! İşte Çözüm:</span>
+                                                                ) : (
+                                                                    <span className="text-indigo-600">Üzülme, Öğrenme Fırsatı! İşte Çözüm:</span>
+                                                                )}
+                                                            </h3>
+                                                            {currentQuestion.explanation && (
+                                                                <div className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+                                                                    {renderContent(currentQuestion.explanation)}
+                                                                </div>
+                                                            )}
+                                                            {currentQuestion.videoSolution && (
+                                                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-slate-800/50 flex justify-end">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        className="rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50"
+                                                                        onClick={() => window.open(currentQuestion.videoSolution, '_blank')}
+                                                                    >
+                                                                        <PlayCircle className="mr-2 h-5 w-5" />
+                                                                        Video Çözümü İzle
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 

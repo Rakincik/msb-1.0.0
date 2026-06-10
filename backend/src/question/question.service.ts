@@ -39,8 +39,8 @@ export class QuestionService {
                 topics: {
                     connect: topicIds.map((id) => ({ id })),
                 },
-                examAreas: {
-                    connect: examAreaIds?.map((id) => ({ id })) || [],
+                examAreaQuestions: {
+                    create: examAreaIds?.map((id) => ({ examAreaId: id })) || [],
                 },
             },
             include: {
@@ -101,7 +101,7 @@ export class QuestionService {
         if (difficulty) where.difficulty = difficulty;
         if (type) where.type = type;
         if (createdById) where.createdById = createdById;
-        if (examAreaId) where.examAreas = { some: { id: examAreaId } };
+        if (examAreaId) where.examAreaQuestions = { some: { examAreaId } };
 
         if (isPastQuestion !== undefined) where.isPastQuestion = isPastQuestion;
         if (pastExamName) where.pastExamName = pastExamName;
@@ -244,7 +244,10 @@ export class QuestionService {
         }
 
         if (examAreaIds) {
-            data.examAreas = { set: examAreaIds.map(id => ({ id })) };
+            data.examAreaQuestions = {
+                deleteMany: {},
+                create: examAreaIds.map(id => ({ examAreaId: id }))
+            };
         }
 
         return this.prisma.question.update({
@@ -253,7 +256,7 @@ export class QuestionService {
             include: {
                 topics: true,
                 learningOutcome: true,
-                examAreas: true,
+                examAreaQuestions: { include: { examArea: true } },
             },
         });
     }
@@ -308,7 +311,7 @@ export class QuestionService {
         }
 
         if (examAreaIds && examAreaIds.length > 0) {
-            where.examAreas = { some: { id: { in: examAreaIds } } };
+            where.examAreaQuestions = { some: { examAreaId: { in: examAreaIds } } };
         }
 
         if (difficulty) {
@@ -395,8 +398,11 @@ export class QuestionService {
             this.prisma.question.update({
                 where: { id },
                 data: {
-                    examAreas: {
-                        connect: examAreaIds.map((areaId) => ({ id: areaId })),
+                    examAreaQuestions: {
+                        createMany: {
+                            data: examAreaIds.map((areaId) => ({ examAreaId: areaId })),
+                            skipDuplicates: true,
+                        },
                     },
                 },
             }),
