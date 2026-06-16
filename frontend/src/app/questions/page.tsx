@@ -1185,6 +1185,21 @@ function QuestionDetailDrawer({ question, onEdit, onDelete, onDuplicate }: {
                     </div>
                 </div>
 
+                {/* Explanation */}
+                {(question.explanation?.text || question.explanation?.image) && (
+                    <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Çözüm</h4>
+                        <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3">
+                            {question.explanation.image && (
+                                <img src={normalizeImageUrl(question.explanation.image)} alt="Çözüm" className="w-full rounded-lg border shadow-sm" />
+                            )}
+                            {question.explanation.text && (
+                                <div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: question.explanation.text }} />
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Video Solution */}
                 {question.videoSolution && (
                     <div className="space-y-3">
