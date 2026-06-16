@@ -56,6 +56,7 @@ import { apiClient } from '@/lib/api-client';
 interface Question {
     id: string;
     content: any;
+    explanation?: any;
     options: any;
     correctAnswer: string;
     difficulty: string;
