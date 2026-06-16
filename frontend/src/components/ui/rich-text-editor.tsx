@@ -2,9 +2,10 @@
 
 import React, { useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bold, Italic, Underline, Strikethrough, Subscript, Superscript } from 'lucide-react';
+import { Bold, Italic, Underline, Strikethrough, Subscript, Superscript, Palette, Highlighter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface RichTextEditorProps {
     value: string;
@@ -26,6 +27,28 @@ const TOOLBAR_BUTTONS = [
     { command: 'strikeThrough', icon: Strikethrough, title: 'Üstü Çizili', shortcut: 'S' },
     { command: 'subscript', icon: Subscript, title: 'Alt Simge', shortcut: null },
     { command: 'superscript', icon: Superscript, title: 'Üst Simge', shortcut: null },
+];
+
+const COLORS = [
+    { name: 'Siyah', value: '#000000' },
+    { name: 'Kırmızı', value: '#ef4444' },
+    { name: 'Turuncu', value: '#f97316' },
+    { name: 'Sarı', value: '#eab308' },
+    { name: 'Yeşil', value: '#22c55e' },
+    { name: 'Mavi', value: '#3b82f6' },
+    { name: 'Mor', value: '#a855f7' },
+    { name: 'Pembe', value: '#ec4899' },
+    { name: 'Gri', value: '#6b7280' },
+];
+
+const HIGHLIGHT_COLORS = [
+    { name: 'Yok', value: 'transparent' },
+    { name: 'Sarı', value: '#fef08a' },
+    { name: 'Yeşil', value: '#bbf7d0' },
+    { name: 'Mavi', value: '#bfdbfe' },
+    { name: 'Kırmızı', value: '#fecaca' },
+    { name: 'Mor', value: '#e9d5ff' },
+    { name: 'Gri', value: '#e5e7eb' },
 ];
 
 export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
@@ -124,6 +147,64 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
                             </TooltipContent>
                         </Tooltip>
                     ))}
+
+                    <div className="w-px h-4 bg-slate-300 mx-1" />
+
+                    {/* Text Color Picker */}
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 hover:bg-violet-100" title="Metin Rengi">
+                                <Palette className="h-3.5 w-3.5" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-40 p-2" align="center">
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {COLORS.map((c) => (
+                                    <button
+                                        key={c.name}
+                                        type="button"
+                                        title={c.name}
+                                        className="w-6 h-6 rounded-md border border-slate-200 shadow-sm transition-transform hover:scale-110"
+                                        style={{ backgroundColor: c.value }}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            execCommand('foreColor');
+                                            document.execCommand('foreColor', false, c.value);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* Highlight Color Picker */}
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 hover:bg-violet-100" title="Arka Plan Rengi">
+                                <Highlighter className="h-3.5 w-3.5" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-40 p-2" align="center">
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {HIGHLIGHT_COLORS.map((c) => (
+                                    <button
+                                        key={c.name}
+                                        type="button"
+                                        title={c.name}
+                                        className={cn("w-6 h-6 rounded-md border border-slate-200 shadow-sm transition-transform hover:scale-110", c.value === 'transparent' ? 'bg-[url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==")]' : '')}
+                                        style={{ backgroundColor: c.value !== 'transparent' ? c.value : undefined }}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            // Some browsers use backColor, others hiliteColor
+                                            document.execCommand('hiliteColor', false, c.value);
+                                            document.execCommand('backColor', false, c.value);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
                 </TooltipProvider>
             </div>
 

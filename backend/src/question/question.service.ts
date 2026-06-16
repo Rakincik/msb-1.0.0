@@ -233,6 +233,17 @@ export class QuestionService {
 
         const data: any = { ...rest };
 
+        // Handle Prisma Json fields properly when null is passed to clear them
+        if (data.explanation === null) {
+            data.explanation = require('@prisma/client').Prisma.DbNull;
+        }
+        if (data.options === null) {
+            data.options = require('@prisma/client').Prisma.DbNull;
+        }
+        if (data.content === null) {
+            data.content = require('@prisma/client').Prisma.DbNull;
+        }
+
         // Arama metnini güncelle (content, options veya explanation değiştiyse)
         const newContent = rest.content || question.content;
         const newOptions = rest.options || question.options;
