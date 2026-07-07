@@ -177,27 +177,45 @@ export default function ExamAreaDetailPage() {
 
     const handleDeleteQuestion = async (id: string) => {
         const confirmed = await confirm({
-            title: 'Soru Silme',
-            description: 'Soru silinecek. Emin misiniz?',
-            confirmText: 'Sil',
+            title: 'Sistemden Soru Silme',
+            description: 'Bu soru sistemden (soru havuzundan) tamamen ve kalıcı olarak silinecektir. Emin misiniz?',
+            confirmText: 'Kalıcı Olarak Sil',
             isDangerous: true,
         });
         if (!confirmed) return;
         try {
             await apiClient.delete(`/questions/${id}`);
-            toast({ title: 'Başarılı', description: 'Soru silindi.' });
+            toast({ title: 'Başarılı', description: 'Soru sistemden kalıcı olarak silindi.' });
             fetchQuestions();
+            fetchBankDetail();
         } catch (error) {
             toast({ title: 'Hata', description: 'Silinemedi.', variant: 'destructive' });
+        }
+    };
+
+    const handleRemoveQuestion = async (id: string) => {
+        const confirmed = await confirm({
+            title: 'Soru Bankasından Çıkarma',
+            description: 'Bu soru bu soru bankasından çıkarılacaktır. Soru havuzundaki orijinal soru silinmeyecektir. Emin misiniz?',
+            confirmText: 'Bankadan Çıkar',
+        });
+        if (!confirmed) return;
+        try {
+            await apiClient.delete(`/exam-areas/${bankId}/questions/${id}`);
+            toast({ title: 'Başarılı', description: 'Soru bankadan çıkarıldı.' });
+            fetchQuestions();
+            fetchBankDetail();
+        } catch (error) {
+            toast({ title: 'Hata', description: 'Çıkarılamadı.', variant: 'destructive' });
         }
     };
 
     const handleBulkDelete = async () => {
         if (selectedIds.size === 0) return;
         const confirmed = await confirm({
-            title: 'Çoklu Soru Silme',
-            description: `${selectedIds.size} soru silinecek. Emin misiniz?`,
-            confirmText: 'Sil',
+            title: 'Çoklu Sistemden Soru Silme',
+            description: `${selectedIds.size} soru sistemden (soru havuzundan) tamamen ve kalıcı olarak silinecektir. Emin misiniz?`,
+            confirmText: 'Kalıcı Olarak Sil',
             isDangerous: true,
         });
         if (!confirmed) return;
@@ -205,11 +223,33 @@ export default function ExamAreaDetailPage() {
             for (const id of Array.from(selectedIds)) {
                 await apiClient.delete(`/questions/${id}`);
             }
-            toast({ title: 'Başarılı', description: `${selectedIds.size} soru silindi.` });
+            toast({ title: 'Başarılı', description: `${selectedIds.size} soru sistemden kalıcı olarak silindi.` });
             setSelectedIds(new Set());
             fetchQuestions();
+            fetchBankDetail();
         } catch (error) {
             toast({ title: 'Hata', description: 'Silme işlemi başarısız.', variant: 'destructive' });
+        }
+    };
+
+    const handleBulkRemove = async () => {
+        if (selectedIds.size === 0) return;
+        const confirmed = await confirm({
+            title: 'Çoklu Soru Bankasından Çıkarma',
+            description: `${selectedIds.size} soru bu soru bankasından çıkarılacaktır. Soru havuzundaki orijinal sorular silinmeyecektir. Emin misiniz?`,
+            confirmText: 'Bankadan Çıkar',
+        });
+        if (!confirmed) return;
+        try {
+            for (const id of Array.from(selectedIds)) {
+                await apiClient.delete(`/exam-areas/${bankId}/questions/${id}`);
+            }
+            toast({ title: 'Başarılı', description: `${selectedIds.size} soru bankadan çıkarıldı.` });
+            setSelectedIds(new Set());
+            fetchQuestions();
+            fetchBankDetail();
+        } catch (error) {
+            toast({ title: 'Hata', description: 'Çıkarma işlemi başarısız.', variant: 'destructive' });
         }
     };
 
@@ -315,8 +355,8 @@ export default function ExamAreaDetailPage() {
                                     <CheckSquare className="h-5 w-5 text-primary" />
                                     <span className="text-sm font-medium">{selectedIds.size} soru seçildi</span>
                                     <div className="flex-1" />
-                                    <Button variant="outline" size="sm" className="h-8 gap-1.5"><Download className="h-3.5 w-3.5" /> Dışa Aktar</Button>
-                                    <Button variant="destructive" size="sm" className="h-8 gap-1.5" onClick={handleBulkDelete}><Trash2 className="h-3.5 w-3.5" /> Sil</Button>
+                                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={handleBulkRemove}><X className="h-3.5 w-3.5" /> Bankadan Kaldır</Button>
+                                    <Button variant="destructive" size="sm" className="h-8 gap-1.5" onClick={handleBulkDelete}><Trash2 className="h-3.5 w-3.5" /> Sistemden Sil</Button>
                                     <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelectedIds(new Set())}><X className="h-4 w-4" /></Button>
                                 </div>
                             )}
@@ -337,6 +377,7 @@ export default function ExamAreaDetailPage() {
                                             question={q}
                                             isSelected={selectedIds.has(q.id)}
                                             onToggleSelect={() => toggleSelect(q.id)}
+                                            onRemove={() => handleRemoveQuestion(q.id)}
                                             onDelete={() => handleDeleteQuestion(q.id)}
                                             onEdit={(q: Question) => { setSelectedQuestion(q); setIsManualFormOpen(true); }}
                                             bankColor={bank.color}
@@ -351,6 +392,7 @@ export default function ExamAreaDetailPage() {
                                             question={q}
                                             isSelected={selectedIds.has(q.id)}
                                             onToggleSelect={() => toggleSelect(q.id)}
+                                            onRemove={() => handleRemoveQuestion(q.id)}
                                             onDelete={() => handleDeleteQuestion(q.id)}
                                         />
                                     ))}
@@ -453,9 +495,12 @@ export default function ExamAreaDetailPage() {
     );
 }
 
-const stripHtml = (html: string) => { const tmp = document.createElement("DIV"); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || ""; }
+const stripHtml = (html: string) => {
+    if (!html) return "";
+    return html.replace(/<[^>]*>/g, "");
+}
 
-function QuestionGridCard({ question, isSelected, onToggleSelect, onDelete, onEdit, bankColor }: any) {
+function QuestionGridCard({ question, isSelected, onToggleSelect, onRemove, onDelete, onEdit, bankColor }: any) {
     const config = DIFFICULTY_CONFIG[question.difficulty] || DIFFICULTY_CONFIG.MEDIUM;
     const hasImage = question.content?.image;
     const rawText = question.content?.text ? stripHtml(question.content.text) : 'Soru metni yok';
@@ -473,9 +518,10 @@ function QuestionGridCard({ question, isSelected, onToggleSelect, onDelete, onEd
                 <div className="flex items-center justify-between">
                     <Badge className={cn("text-[10px] font-medium", config.bg, config.color, "border-0")}>{config.label}</Badge>
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 -mr-2"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 -mr-2" onClick={(e) => e.stopPropagation()}><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Sil</DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRemove(); }}><X className="mr-2 h-4 w-4" /> Bankadan Kaldır</DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Sistemden Sil</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -485,15 +531,16 @@ function QuestionGridCard({ question, isSelected, onToggleSelect, onDelete, onEd
     );
 }
 
-function QuestionListCard({ question, isSelected, onToggleSelect, onDelete }: any) {
+function QuestionListCard({ question, isSelected, onToggleSelect, onRemove, onDelete }: any) {
     const config = DIFFICULTY_CONFIG[question.difficulty] || DIFFICULTY_CONFIG.MEDIUM;
+    const rawText = question.content?.text ? stripHtml(question.content.text) : 'Soru metni yok';
     return (
         <Card className={cn("group transition-all duration-200 hover:shadow-md", isSelected && "ring-2 ring-primary")}>
             <CardContent className="p-3 flex items-center gap-3">
                 <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} />
                 {question.content?.image && <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted shrink-0"><img src={normalizeImageUrl(question.content.image)} alt="" className="w-full h-full object-cover" /></div>}
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm line-clamp-1">{question.content?.text || 'Soru metni yok'}</p>
+                    <p className="text-sm line-clamp-1">{rawText}</p>
                     <div className="flex items-center gap-2 mt-1">
                         <Badge className={cn("text-[10px]", config.bg, config.color, "border-0")}>{config.label}</Badge>
                         {question.topics[0] && <span className="text-[10px] text-muted-foreground">{question.topics[0].name}</span>}
@@ -504,9 +551,10 @@ function QuestionListCard({ question, isSelected, onToggleSelect, onDelete }: an
                     {question.videoSolution && <Video className="h-4 w-4 text-rose-500" />}
                 </div>
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={onDelete} className="text-red-600"><Trash2 className="h-4 w-4 mr-2" /> Sil</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRemove(); }}><X className="mr-2 h-4 w-4" /> Bankadan Kaldır</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Sistemden Sil</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardContent>

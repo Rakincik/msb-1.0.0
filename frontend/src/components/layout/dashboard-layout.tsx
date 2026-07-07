@@ -101,7 +101,7 @@ export function AppSidebar() {
 
     return (
         <Sidebar>
-            <SidebarHeader className="px-6 py-6">
+            <SidebarHeader className="px-6 py-4">
                 <Link href="/dashboard" className="flex items-center gap-3 transition-opacity hover:opacity-80">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-apple-md">
                         <GraduationCap className="h-6 w-6" />
@@ -113,20 +113,20 @@ export function AppSidebar() {
                 </Link>
             </SidebarHeader>
 
-            <SidebarContent className="px-4 mt-2">
+            <SidebarContent className="px-4 mt-1">
                 <SidebarGroup>
-                    <SidebarGroupLabel className="px-4 pb-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+                    <SidebarGroupLabel className="px-4 pb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
                         Ana Menü
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
-                        <SidebarMenu className="gap-2.5">
+                        <SidebarMenu className="gap-1">
                             {menuItems.map((item) => (
                                 <SidebarMenuItem key={item.href}>
                                     <SidebarMenuButton
                                         asChild
                                         isActive={pathname === item.href}
                                         className={cn(
-                                            "gap-4 px-4 py-6 min-h-[52px] rounded-2xl transition-all group relative overflow-hidden",
+                                            "gap-4 px-4 py-3 min-h-[44px] rounded-xl transition-all group relative overflow-hidden",
                                             pathname === item.href
                                                 ? "bg-slate-100/80 shadow-sm"
                                                 : "hover:bg-slate-50"
@@ -134,14 +134,14 @@ export function AppSidebar() {
                                     >
                                         <Link href={item.href} className="flex items-center w-full">
                                             {pathname === item.href && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-primary rounded-r-full" />
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full" />
                                             )}
                                             <item.icon className={cn(
-                                                "h-6 w-6 transition-colors duration-200",
+                                                "h-5 w-5 transition-colors duration-200",
                                                 pathname === item.href ? "text-primary" : "text-slate-500 group-hover:text-slate-800"
                                             )} />
                                             <span className={cn(
-                                                "text-[15px] tracking-wide ml-3 transition-all",
+                                                "text-[14px] tracking-wide ml-3 transition-all",
                                                 pathname === item.href 
                                                     ? "font-bold text-slate-900" 
                                                     : "font-semibold text-slate-700 group-hover:text-slate-900"
@@ -160,7 +160,7 @@ export function AppSidebar() {
             <SidebarFooter className="p-4">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-start gap-3 px-2 py-6 hover:bg-sidebar-accent/50 rounded-xl">
+                        <Button variant="ghost" className="w-full justify-start gap-3 px-2 py-4 hover:bg-sidebar-accent/50 rounded-xl h-auto">
                             <Avatar className="h-9 w-9 border border-white/20 shadow-sm">
                                 <AvatarImage src={user?.avatar} />
                                 <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-medium">

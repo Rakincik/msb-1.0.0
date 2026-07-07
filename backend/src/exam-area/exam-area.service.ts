@@ -328,6 +328,18 @@ export class ExamAreaService {
         });
     }
 
+    async removeQuestion(examAreaId: string, questionId: string) {
+        return this.prisma.examAreaQuestion.delete({
+            where: {
+                examAreaId_questionId: {
+                    examAreaId,
+                    questionId,
+                },
+            },
+        });
+    }
+
+
     private generateSlug(name: string): string {
         return name
             .toLowerCase()

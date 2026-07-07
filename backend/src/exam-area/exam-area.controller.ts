@@ -144,4 +144,12 @@ export class ExamAreaController {
     removeStudent(@Param('id') id: string, @Param('studentId') studentId: string) {
         return this.examAreaService.removeStudent(id, studentId);
     }
+
+    @Delete(':id/questions/:questionId')
+    @UseGuards(RolesGuard)
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.TEACHER)
+    @ApiOperation({ summary: 'Sınav alanından soru çıkar' })
+    removeQuestion(@Param('id') id: string, @Param('questionId') questionId: string) {
+        return this.examAreaService.removeQuestion(id, questionId);
+    }
 }

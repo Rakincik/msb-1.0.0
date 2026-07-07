@@ -337,13 +337,13 @@ export default function QuestionsPage() {
 
     const hasActiveFilters = difficultyFilter || hasImageFilter !== null || hasVideoFilter !== null || isPastQuestionFilter !== null || selection.id || selectedExamAreaFilter || selectedLessonFilter || selectedUnitFilter || selectedTopicFilter || selectedOutcomeFilter;
 
-    // Bulk delete — soft delete (geri alınabilir)
+    // Bulk delete — kalıcı silme (hard delete)
     const handleBulkDelete = async () => {
         if (selectedIds.size === 0) return;
 
         // 10+ soru silinecekse güçlü onay iste
         if (selectedIds.size >= 10) {
-            const typed = prompt(`⚠️ ${selectedIds.size} soru silinecek!\n\nBu işlemi onaylamak için "SİL" yazın:`);
+            const typed = prompt(`⚠️ ${selectedIds.size} soru kalıcı olarak silinecek!\n\nBu işlemi onaylamak için "SİL" yazın:`);
             if (typed !== 'SİL') {
                 toast({ title: 'İptal edildi', description: 'Silme işlemi iptal edildi.' });
                 return;
@@ -351,8 +351,8 @@ export default function QuestionsPage() {
         } else {
             const confirmed = await confirm({
                 title: 'Çoklu Soru Silme',
-                description: `${selectedIds.size} soru silinecek. Emin misiniz?\n(Silinen sorular geri alınabilir)`,
-                confirmText: 'Sil',
+                description: `${selectedIds.size} soru kalıcı olarak silinecek. Emin misiniz?`,
+                confirmText: 'Kalıcı Olarak Sil',
                 isDangerous: true,
             });
             if (!confirmed) return;
@@ -362,7 +362,7 @@ export default function QuestionsPage() {
             for (const id of Array.from(selectedIds)) {
                 await apiClient.delete(`/questions/${id}`);
             }
-            toast({ title: 'Başarılı', description: `${selectedIds.size} soru silindi. (Geri alınabilir)` });
+            toast({ title: 'Başarılı', description: `${selectedIds.size} soru kalıcı olarak silindi.` });
             setSelectedIds(new Set());
             fetchQuestions();
         } catch (error) {
@@ -370,18 +370,18 @@ export default function QuestionsPage() {
         }
     };
 
-    // Single Delete — soft delete (geri alınabilir)
+    // Single Delete — kalıcı silme (hard delete)
     const handleDelete = async (id: string) => {
         const confirmed = await confirm({
             title: 'Soru Silme',
-            description: 'Soru silinecek. Emin misiniz?\n(Silinen sorular geri alınabilir)',
-            confirmText: 'Sil',
+            description: 'Soru kalıcı olarak silinecek. Emin misiniz?',
+            confirmText: 'Kalıcı Olarak Sil',
             isDangerous: true,
         });
         if (!confirmed) return;
         try {
             await apiClient.delete(`/questions/${id}`);
-            toast({ title: 'Başarılı', description: 'Soru silindi. (Geri alınabilir)' });
+            toast({ title: 'Başarılı', description: 'Soru kalıcı olarak silindi.' });
             fetchQuestions();
             if (detailQuestion?.id === id) setDetailQuestion(null);
         } catch (error) {

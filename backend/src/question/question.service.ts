@@ -272,13 +272,10 @@ export class QuestionService {
         });
     }
 
-    // Soft delete — soru kalıcı olarak silinmez, deletedAt tarihi atanır
+    // Kalıcı silme
     async remove(id: string) {
-        await this.prisma.question.update({
-            where: { id },
-            data: { deletedAt: new Date(), isActive: false },
-        });
-        return { message: 'Soru silindi (geri alınabilir)' };
+        await this.prisma.question.delete({ where: { id } });
+        return { message: 'Soru kalıcı olarak silindi' };
     }
 
     // Kalıcı silme (sadece admin için, dikkatle kullanılmalı)
