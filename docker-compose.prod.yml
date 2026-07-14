@@ -97,7 +97,7 @@ services:
       PORT: 3000
       HOSTNAME: "0.0.0.0"
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3055:3000"
     networks:
       - app_network
 
