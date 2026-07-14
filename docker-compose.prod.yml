@@ -75,7 +75,7 @@ services:
       # App Config
       PORT: 3333
       FRONTEND_URL: ${FRONTEND_URL}
-      CORS_ORIGINS: "https://msb.on7medya.com,https://sorubankasi.on7medya.com,https://www.msb.on7medya.com,https://www.sorubankasi.on7medya.com"
+      CORS_ORIGINS: "https://msb.on7medya.com,https://sorubankasi.on7medya.com,https://www.msb.on7medya.com,https://www.sorubankasi.on7medya.com,https://msb.muro.click,https://www.msb.muro.click"
     ports:
       - "127.0.0.1:3333:3333"
     volumes:
